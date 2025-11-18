@@ -1,0 +1,105 @@
+---
+# ==================================
+# Fix Memory Remediation Task
+# ==================================
+# Handles high memory usage by clearing caches and identifying memory hogs
+
+- name: Check current memory usage
+  shell: free | grep Mem | awk '{printf "%.0f", ($3/$2) * 100.0}'
+  register: memory_usage_before
+  changed_when: false
+
+- name: Display current memory usage
+  debug:
+    msg: "Current memory usage: {{ memory_usage_before.stdout }}%"
+
+- name: Get top memory-consuming processes
+  shell: |
+    ps aux --sort=-%mem | head -11
+  register: top_processes
+  changed_when: false
+
+- name: Display top memory consumers
+  debug:
+    var: top_processes.stdout_lines
+
+- name: Clear page cache (safe operation)
+  shell: |
+    sync
+    echo 1 > /proc/sys/vm/drop_caches
+  when: memory_usage_before.stdout | int > 85
+
+- name: Wait after cache clear
+  pause:
+    seconds: 5
+  when: memory_usage_before.stdout | int > 85
+
+- name: Check for memory leaks in httpd
+  shell: |
+    ps aux | grep httpd | awk '{sum+=$6} END {print sum/1024}'
+  register: httpd_memory
+  changed_when: false
+
+- name: Display httpd memory usage
+  debug:
+    msg: "Apache memory usage: {{ httpd_memory.stdout }} MB"
+
+- name: Restart httpd if using excessive memory
+  block:
+    - name: Restart Apache to free memory
+      systemd:
+        name: httpd
+        state: restarted
+
+    - name: Wait for Apache to restart
+      wait_for:
+        port: 80
+        delay: 2
+        timeout: 30
+  when: httpd_memory.stdout | float > 500
+
+- name: Clear systemd journal to free memory
+  shell: |
+    journalctl --rotate
+    journalctl --vacuum-size=50M
+  when: memory_usage_before.stdout | int > 85
+
+- name: Check for and kill zombie processes
+  shell: |
+    ps aux | awk '$8=="Z" {print $2}' | xargs -r kill -9 2>/dev/null || true
+  ignore_errors: yes
+
+- name: Adjust swappiness if needed
+  sysctl:
+    name: vm.swappiness
+    value: '10'
+    state: present
+    reload: yes
+  when: memory_usage_before.stdout | int > 90
+
+- name: Check memory usage after remediation
+  shell: free | grep Mem | awk '{printf "%.0f", ($3/$2) * 100.0}'
+  register: memory_usage_after
+  changed_when: false
+
+- name: Calculate memory freed
+  set_fact:
+    memory_freed: "{{ memory_usage_before.stdout | int - memory_usage_after.stdout | int }}"
+
+- name: Display remediation results
+  debug:
+    msg: |
+      Memory Optimization Complete
+      Before: {{ memory_usage_before.stdout }}%
+      After: {{ memory_usage_after.stdout }}%
+      Freed: {{ memory_freed }}%
+
+- name: Check if additional action needed
+  debug:
+    msg: "WARNING: Memory usage still above 85% - consider scaling up instance size"
+  when: memory_usage_after.stdout | int > 85
+
+- name: Notify success
+  debug:
+    msg: "✓ Memory optimization completed successfully"
+  when: memory_usage_after.stdout | int <= 85

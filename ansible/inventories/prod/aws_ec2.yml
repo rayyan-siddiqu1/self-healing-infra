@@ -1,0 +1,70 @@
+# ==================================
+# AWS EC2 Dynamic Inventory
+# ==================================
+# This enables Ansible to automatically discover EC2 instances
+# No manual inventory management needed!
+#
+# Prerequisites:
+# 1. pip install boto3 botocore
+# 2. AWS credentials configured (aws configure)
+#
+# Usage:
+# ansible-playbook -i inventories/prod/aws_ec2.yml playbooks/remediation.yml
+# ansible all -i inventories/prod/aws_ec2.yml -m ping
+
+plugin: aws_ec2
+
+# AWS Region
+regions:
+  - us-east-1
+
+# Filter instances by tags
+filters:
+  tag:Environment: prod
+  tag:Project: self-healing-infra
+  instance-state-name: running
+
+# Group instances by tags
+keyed_groups:
+  # Group by Role tag: role_web, role_api, etc.
+  - key: tags.Role
+    prefix: role
+    separator: '_'
+
+  # Group by Environment: environment_prod, environment_dev
+  - key: tags.Environment
+    prefix: environment
+    separator: '_'
+
+  # Group by Availability Zone: az_us_east_1a, az_us_east_1b
+  - key: placement.availability_zone
+    prefix: az
+    separator: '_'
+
+  # Group by instance type: type_t3_micro, type_t3_small
+  - key: instance_type
+    prefix: type
+    separator: '_'
+
+# Use private IP as hostname (for VPC internal communication)
+hostnames:
+  - private-ip-address
+
+# Set connection variables
+compose:
+  ansible_host: private_ip_address
+  ansible_user: "'ec2-user'"
+  ansible_ssh_private_key_file: "'{{ playbook_dir }}/../../environments/infra-key.pem'"
+  ansible_ssh_common_args: "'-o StrictHostKeyChecking=no'"
+  instance_id: instance_id
+  instance_name: tags.Name
+
+# Cache settings (optional - speeds up subsequent runs)
+cache: yes
+cache_plugin: jsonfile
+cache_timeout: 300
+cache_connection: /tmp/ansible_inventory_cache
+cache_prefix: aws_ec2
+
+# Strict mode - fail if plugin config is invalid
+strict: False

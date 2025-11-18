@@ -1,0 +1,127 @@
+---
+# ==================================
+# Fix Disk Space Remediation Task
+# ==================================
+# Handles high disk usage by cleaning up temporary files and logs
+
+- name: Check current disk usage
+  shell: df -h / | tail -1 | awk '{print $5}' | sed 's/%//'
+  register: disk_usage_before
+  changed_when: false
+
+- name: Display current disk usage
+  debug:
+    msg: "Current disk usage: {{ disk_usage_before.stdout }}%"
+
+- name: Find large log files
+  shell: |
+    find /var/log -type f -size +100M -exec ls -lh {} \; 2>/dev/null || true
+  register: large_logs
+  changed_when: false
+
+- name: Display large log files found
+  debug:
+    var: large_logs.stdout_lines
+  when: large_logs.stdout != ""
+
+- name: Clean up old log files (older than 7 days)
+  shell: |
+    find /var/log -type f -name "*.log.*" -mtime +7 -delete
+    find /var/log -type f -name "*.gz" -mtime +7 -delete
+    find /var/log -type f -name "*.old" -mtime +7 -delete
+  register: log_cleanup
+
+- name: Clean up journal logs (keep last 7 days)
+  shell: |
+    journalctl --vacuum-time=7d
+  register: journal_cleanup
+  ignore_errors: yes
+
+- name: Clean up temporary files
+  block:
+    - name: Remove old temp files (older than 7 days)
+      shell: |
+        find /tmp -type f -atime +7 -delete 2>/dev/null || true
+        find /var/tmp -type f -atime +7 -delete 2>/dev/null || true
+
+    - name: Clean package manager cache
+      shell: |
+        dnf clean all || yum clean all || true
+      when: ansible_os_family == "RedHat"
+
+    - name: Remove old core dumps
+      shell: |
+        find / -name "core.*" -mtime +7 -delete 2>/dev/null || true
+      ignore_errors: yes
+
+- name: Rotate Apache logs manually if large
+  block:
+    - name: Check Apache log sizes
+      stat:
+        path: "{{ item }}"
+      register: apache_logs
+      loop:
+        - /var/log/httpd/access_log
+        - /var/log/httpd/error_log
+      ignore_errors: yes
+
+    - name: Rotate large Apache logs
+      shell: |
+        [ -f {{ item.item }} ] && [ $(stat -c%s {{ item.item }}) -gt 104857600 ] && {
+          mv {{ item.item }} {{ item.item }}.$(date +%Y%m%d-%H%M%S)
+          systemctl reload httpd
+        } || true
+      loop: "{{ apache_logs.results }}"
+      when: item.stat is defined and item.stat.exists
+      ignore_errors: yes
+
+- name: Clean up application-specific files
+  block:
+    - name: Remove old application logs
+      shell: |
+        find /var/www -name "*.log" -mtime +7 -delete 2>/dev/null || true
+
+    - name: Clean up cache directories
+      shell: |
+        find /var/cache -type f -atime +7 -delete 2>/dev/null || true
+      ignore_errors: yes
+
+- name: Find and remove old backups
+  shell: |
+    find /backup -name "*.tar.gz" -mtime +30 -delete 2>/dev/null || true
+    find /backup -name "*.sql" -mtime +30 -delete 2>/dev/null || true
+  ignore_errors: yes
+
+- name: Clear systemd journal if needed
+  shell: |
+    journalctl --rotate
+    journalctl --vacuum-size=100M
+  when: disk_usage_before.stdout | int > 85
+  ignore_errors: yes
+
+- name: Check disk usage after cleanup
+  shell: df -h / | tail -1 | awk '{print $5}' | sed 's/%//'
+  register: disk_usage_after
+  changed_when: false
+
+- name: Calculate space freed
+  set_fact:
+    space_freed: "{{ disk_usage_before.stdout | int - disk_usage_after.stdout | int }}"
+
+- name: Display cleanup results
+  debug:
+    msg: |
+      Disk Space Cleanup Complete
+      Before: {{ disk_usage_before.stdout }}%
+      After: {{ disk_usage_after.stdout }}%
+      Freed: {{ space_freed }}%
+
+- name: Check if additional action needed
+  debug:
+    msg: "WARNING: Disk usage still above 85% - manual intervention may be required"
+  when: disk_usage_after.stdout | int > 85
+
+- name: Notify success
+  debug:
+    msg: "Disk space cleanup completed successfully"
+  when: disk_usage_after.stdout | int <= 85

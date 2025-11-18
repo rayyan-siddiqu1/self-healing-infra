@@ -1,0 +1,176 @@
+---
+# ==================================
+# Security Hardening Playbook
+# ==================================
+# Applies security best practices to EC2 instances
+
+- name: Apply Security Hardening
+  hosts: all
+  become: yes
+  gather_facts: yes
+
+  vars:
+    ssh_port: 22
+    allowed_ssh_users: ["ec2-user"]
+
+  tasks:
+    - name: Update all packages to latest
+      dnf:
+        name: "*"
+        state: latest
+        update_cache: yes
+      when: ansible_os_family == "RedHat"
+
+    - name: Install security tools
+      dnf:
+        name:
+          - fail2ban
+          - aide
+          - audit
+        state: present
+      when: ansible_os_family == "RedHat"
+
+    - name: Configure fail2ban
+      block:
+        - name: Ensure fail2ban config directory exists
+          file:
+            path: /etc/fail2ban
+            state: directory
+            mode: '0755'
+
+        - name: Configure fail2ban for SSH
+          copy:
+            dest: /etc/fail2ban/jail.local
+            content: |
+              [DEFAULT]
+              bantime = 3600
+              findtime = 600
+              maxretry = 5
+
+              [sshd]
+              enabled = true
+              port = {{ ssh_port }}
+              logpath = /var/log/secure
+              backend = systemd
+
+        - name: Start and enable fail2ban
+          systemd:
+            name: fail2ban
+            state: started
+            enabled: yes
+
+    - name: Harden SSH configuration
+      block:
+        - name: Configure secure SSH settings
+          lineinfile:
+            path: /etc/ssh/sshd_config
+            regexp: "{{ item.regexp }}"
+            line: "{{ item.line }}"
+            state: present
+            backup: yes
+          loop:
+            - { regexp: '^#?PermitRootLogin', line: 'PermitRootLogin no' }
+            - { regexp: '^#?PasswordAuthentication', line: 'PasswordAuthentication no' }
+            - { regexp: '^#?X11Forwarding', line: 'X11Forwarding no' }
+            - { regexp: '^#?MaxAuthTries', line: 'MaxAuthTries 3' }
+            - { regexp: '^#?ClientAliveInterval', line: 'ClientAliveInterval 300' }
+            - { regexp: '^#?ClientAliveCountMax', line: 'ClientAliveCountMax 2' }
+            - { regexp: '^#?Protocol', line: 'Protocol 2' }
+          notify: restart sshd
+
+    - name: Set correct file permissions
+      file:
+        path: "{{ item.path }}"
+        mode: "{{ item.mode }}"
+      loop:
+        - { path: '/etc/passwd', mode: '0644' }
+        - { path: '/etc/shadow', mode: '0000' }
+        - { path: '/etc/group', mode: '0644' }
+        - { path: '/etc/gshadow', mode: '0000' }
+
+    - name: Configure firewall rules
+      block:
+        - name: Stop and disable firewalld (using security groups)
+          systemd:
+            name: firewalld
+            state: stopped
+            enabled: no
+          ignore_errors: yes
+
+    - name: Enable and configure auditd
+      block:
+        - name: Start and enable auditd
+          systemd:
+            name: auditd
+            state: started
+            enabled: yes
+
+        - name: Add audit rules
+          copy:
+            dest: /etc/audit/rules.d/hardening.rules
+            content: |
+              # Monitor authentication events
+              -w /var/log/lastlog -p wa -k logins
+              -w /var/run/faillock/ -p wa -k logins
+
+              # Monitor system configuration changes
+              -w /etc/passwd -p wa -k identity
+              -w /etc/group -p wa -k identity
+              -w /etc/shadow -p wa -k identity
+              -w /etc/gshadow -p wa -k identity
+
+              # Monitor SSH configuration
+              -w /etc/ssh/sshd_config -p wa -k sshd
+
+    - name: Disable unused services
+      systemd:
+        name: "{{ item }}"
+        state: stopped
+        enabled: no
+      loop:
+        - avahi-daemon
+        - cups
+      ignore_errors: yes
+
+    - name: Set system security limits
+      pam_limits:
+        domain: "*"
+        limit_type: hard
+        limit_item: core
+        value: "0"
+
+    - name: Configure kernel security parameters
+      sysctl:
+        name: "{{ item.name }}"
+        value: "{{ item.value }}"
+        state: present
+        reload: yes
+      loop:
+        - { name: 'kernel.dmesg_restrict', value: '1' }
+        - { name: 'kernel.kptr_restrict', value: '2' }
+        - { name: 'net.ipv4.conf.all.rp_filter', value: '1' }
+        - { name: 'net.ipv4.conf.default.rp_filter', value: '1' }
+        - { name: 'net.ipv4.conf.all.accept_source_route', value: '0' }
+        - { name: 'net.ipv4.conf.default.accept_source_route', value: '0' }
+        - { name: 'net.ipv4.icmp_echo_ignore_broadcasts', value: '1' }
+        - { name: 'net.ipv4.tcp_syncookies', value: '1' }
+
+    - name: Display hardening summary
+      debug:
+        msg: |
+          ========================================
+          SECURITY HARDENING COMPLETED
+          ========================================
+          - Packages updated
+          - Fail2ban configured
+          - SSH hardened
+          - File permissions secured
+          - Auditd enabled
+          - Kernel parameters hardened
+          ========================================
+
+  handlers:
+    - name: restart sshd
+      systemd:
+        name: sshd
+        state: restarted

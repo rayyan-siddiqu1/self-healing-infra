@@ -1,0 +1,119 @@
+---
+# ==================================
+# Self-Healing Remediation Playbook
+# ==================================
+# This playbook is triggered by Lambda when CloudWatch alarms fire
+# It performs automated remediation actions based on the issue type
+
+- name: Self-Healing Infrastructure Remediation
+  hosts: all
+  become: yes
+  gather_facts: yes
+
+  vars:
+    remediation_type: "{{ remediation_type | default('health_check') }}"
+    instance_id: "{{ ansible_ec2_instance_id | default('unknown') }}"
+    timestamp: "{{ ansible_date_time.iso8601 }}"
+
+  pre_tasks:
+    - name: Log remediation start
+      debug:
+        msg: |
+          ========================================
+          REMEDIATION STARTED
+          ========================================
+          Type: {{ remediation_type }}
+          Instance: {{ instance_id }}
+          Time: {{ timestamp }}
+          Host: {{ inventory_hostname }}
+          ========================================
+
+    - name: Gather system facts
+      setup:
+        gather_subset:
+          - '!all'
+          - '!min'
+          - hardware
+          - network
+          - virtual
+
+  tasks:
+    # Health Check Remediation
+    - name: Run health check remediation
+      include_tasks: ../remediation/tasks/health_check.yml
+      when: remediation_type == 'health_check'
+      tags:
+        - health_check
+        - always
+
+    # Service Restart Remediation
+    - name: Run service restart remediation
+      include_tasks: ../remediation/tasks/restart_service.yml
+      when: remediation_type == 'restart_service' or remediation_type == 'unhealthy_target'
+      tags:
+        - restart_service
+        - service
+
+    # Disk Space Remediation
+    - name: Run disk space cleanup remediation
+      include_tasks: ../remediation/tasks/fix_disk_space.yml
+      when: remediation_type == 'disk_full' or remediation_type == 'high_disk'
+      tags:
+        - disk_space
+        - cleanup
+
+    # Memory Remediation
+    - name: Run memory optimization remediation
+      include_tasks: ../remediation/tasks/fix_memory.yml
+      when: remediation_type == 'high_memory' or remediation_type == 'memory_leak'
+      tags:
+        - memory
+        - optimization
+
+    # Application Redeployment
+    - name: Run application redeployment
+      include_tasks: ../remediation/tasks/redeploy_app.yml
+      when: remediation_type == 'redeploy_app' or remediation_type == 'app_failure'
+      tags:
+        - redeploy
+        - application
+
+    # Instance Scaling (coordinated with ASG)
+    - name: Coordinate instance scaling
+      include_tasks: ../remediation/tasks/scale_instance.yml
+      when: remediation_type == 'scale_up' or remediation_type == 'high_cpu'
+      tags:
+        - scaling
+        - asg
+      run_once: true
+      delegate_to: localhost
+
+  post_tasks:
+    - name: Verify system health after remediation
+      shell: |
+        echo "=== System Health Check ==="
+        uptime
+        free -h
+        df -h /
+        systemctl status httpd --no-pager || true
+      register: health_check
+      changed_when: false
+
+    - name: Display health check results
+      debug:
+        var: health_check.stdout_lines
+
+    - name: Log remediation completion
+      debug:
+        msg: |
+          ========================================
+          REMEDIATION COMPLETED
+          ========================================
+          Type: {{ remediation_type }}
+          Instance: {{ instance_id }}
+          Status: SUCCESS
+          Duration: {{ ansible_date_time.iso8601 }}
+          ========================================
+
+  handlers:
+    - import_tasks: ../remediation/handlers/main.yml

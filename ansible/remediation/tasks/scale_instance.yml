@@ -1,0 +1,93 @@
+---
+# ==================================
+# Scale Instance Remediation Task
+# ==================================
+# Coordinates with AWS Auto Scaling Group to scale capacity
+# Note: This task runs on localhost and uses AWS CLI
+
+- name: Get current Auto Scaling Group information
+  shell: |
+    aws autoscaling describe-auto-scaling-groups \
+      --auto-scaling-group-names {{ asg_name | default('self-healing-infra-prod-asg') }} \
+      --query 'AutoScalingGroups[0].[DesiredCapacity,MinSize,MaxSize]' \
+      --output text
+  register: asg_info
+  delegate_to: localhost
+  become: no
+  changed_when: false
+
+- name: Parse ASG information
+  set_fact:
+    current_capacity: "{{ asg_info.stdout.split()[0] }}"
+    min_size: "{{ asg_info.stdout.split()[1] }}"
+    max_size: "{{ asg_info.stdout.split()[2] }}"
+
+- name: Display current ASG configuration
+  debug:
+    msg: |
+      Current ASG Status:
+      Desired Capacity: {{ current_capacity }}
+      Min Size: {{ min_size }}
+      Max Size: {{ max_size }}
+
+- name: Check if scaling up is possible
+  set_fact:
+    can_scale_up: "{{ current_capacity | int < max_size | int }}"
+
+- name: Calculate new capacity
+  set_fact:
+    new_capacity: "{{ [current_capacity | int + 1, max_size | int] | min }}"
+  when: can_scale_up | bool
+
+- name: Scale up Auto Scaling Group
+  shell: |
+    aws autoscaling set-desired-capacity \
+      --auto-scaling-group-name {{ asg_name | default('self-healing-infra-prod-asg') }} \
+      --desired-capacity {{ new_capacity }}
+  delegate_to: localhost
+  become: no
+  when: can_scale_up | bool
+  register: scale_result
+
+- name: Display scaling action
+  debug:
+    msg: |
+      Scaling Action: {{ 'Scaled up from ' + current_capacity + ' to ' + new_capacity if can_scale_up else 'Already at maximum capacity' }}
+
+- name: Wait for new instance to launch
+  pause:
+    seconds: 30
+    prompt: "Waiting for new instance to launch and become healthy..."
+  when: can_scale_up | bool
+
+- name: Verify new instance health
+  shell: |
+    aws autoscaling describe-auto-scaling-groups \
+      --auto-scaling-group-names {{ asg_name | default('self-healing-infra-prod-asg') }} \
+      --query 'AutoScalingGroups[0].Instances[?HealthStatus==`Healthy`] | length(@)' \
+      --output text
+  register: healthy_instances
+  delegate_to: localhost
+  become: no
+  retries: 6
+  delay: 10
+  until: healthy_instances.stdout | int >= new_capacity | int
+  when: can_scale_up | bool
+  ignore_errors: yes
+
+- name: Display final status
+  debug:
+    msg: |
+      Scaling Complete
+      Healthy Instances: {{ healthy_instances.stdout | default(current_capacity) }}
+      Target Capacity: {{ new_capacity | default(current_capacity) }}
+
+- name: Notify if at capacity limit
+  debug:
+    msg: "WARNING: Auto Scaling Group is at maximum capacity ({{ max_size }}). Consider increasing max_size if load persists."
+  when: not (can_scale_up | bool)
+
+- name: Notify success
+  debug:
+    msg: " Auto Scaling remediation completed successfully"
+  when: can_scale_up | bool

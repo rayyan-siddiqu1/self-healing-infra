@@ -1,0 +1,95 @@
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+!terraform.tfvars.example
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# Ansible
+*.retry
+ansible/.vault_pass
+ansible/inventories/production.ini
+ansible/inventories/*/hosts
+*.pyc
+__pycache__/
+
+# Lambda
+lambda/**/*.zip
+lambda/package/
+lambda/**/__pycache__/
+lambda/**/*.pyc
+lambda/**/venv/
+lambda/**/node_modules/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Python
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+venv/
+ENV/
+env/
+
+# Logs
+*.log
+logs/
+
+# SSH Keys
+*.pem
+*.key
+!*.pub
+
+# Secrets
+.env
+.env.local
+secrets.yaml
+credentials.json
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Temporary files
+*.tmp
+tmp/
+temp/
+CLAUDE.md
+.claude/

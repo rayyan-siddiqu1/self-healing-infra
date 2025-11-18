@@ -1,0 +1,157 @@
+---
+# ==================================
+# Redeploy Application Remediation Task
+# ==================================
+# Handles application failures by redeploying the application
+
+- name: Stop application service
+  systemd:
+    name: httpd
+    state: stopped
+  ignore_errors: yes
+
+- name: Backup current application
+  shell: |
+    BACKUP_DIR="/backup/app-$(date +%Y%m%d-%H%M%S)"
+    mkdir -p $BACKUP_DIR
+    cp -r /var/www/html/* $BACKUP_DIR/ 2>/dev/null || true
+    echo $BACKUP_DIR
+  register: backup_location
+  changed_when: true
+
+- name: Display backup location
+  debug:
+    msg: "Application backed up to: {{ backup_location.stdout }}"
+
+- name: Clean up current application files
+  shell: |
+    find /var/www/html -mindepth 1 -delete 2>/dev/null || true
+
+- name: Ensure application directory structure
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: apache
+    group: apache
+    mode: '0755'
+  loop:
+    - /var/www/html
+    - /var/www/html/assets
+    - /var/www/html/assets/css
+    - /var/www/html/assets/js
+
+- name: Deploy application files
+  copy:
+    dest: /var/www/html/index.html
+    content: |
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Self-Healing Infrastructure</title>
+          <style>
+              body {
+                  font-family: Arial, sans-serif;
+                  max-width: 800px;
+                  margin: 50px auto;
+                  padding: 20px;
+                  background-color: #f5f5f5;
+              }
+              .container {
+                  background: white;
+                  padding: 30px;
+                  border-radius: 8px;
+                  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+              }
+              h1 { color: #2c3e50; }
+              .status { color: #27ae60; font-weight: bold; }
+              .info { background: #ecf0f1; padding: 15px; border-radius: 4px; margin: 15px 0; }
+              .footer { margin-top: 30px; font-size: 0.9em; color: #7f8c8d; }
+          </style>
+      </head>
+      <body>
+          <div class="container">
+              <h1><× Self-Healing Infrastructure</h1>
+              <div class="info">
+                  <p><strong>Status:</strong> <span class="status"> Operational</span></p>
+                  <p><strong>Instance:</strong> {{ ansible_ec2_instance_id | default(inventory_hostname) }}</p>
+                  <p><strong>Availability Zone:</strong> {{ ansible_ec2_placement_availability_zone | default('N/A') }}</p>
+                  <p><strong>Deployed:</strong> {{ ansible_date_time.iso8601 }}</p>
+                  <p><strong>Hostname:</strong> {{ ansible_hostname }}</p>
+              </div>
+              <h2>System Information</h2>
+              <div class="info">
+                  <p><strong>OS:</strong> {{ ansible_distribution }} {{ ansible_distribution_version }}</p>
+                  <p><strong>Kernel:</strong> {{ ansible_kernel }}</p>
+                  <p><strong>Architecture:</strong> {{ ansible_architecture }}</p>
+                  <p><strong>CPUs:</strong> {{ ansible_processor_vcpus }}</p>
+                  <p><strong>Memory:</strong> {{ (ansible_memtotal_mb / 1024) | round(2) }} GB</p>
+              </div>
+              <div class="footer">
+                  <p>Application automatically redeployed by self-healing automation</p>
+                  <p>Backup available at: {{ backup_location.stdout }}</p>
+              </div>
+          </div>
+      </body>
+      </html>
+    owner: apache
+    group: apache
+    mode: '0644'
+
+- name: Create health check endpoint
+  copy:
+    dest: /var/www/html/health
+    content: "OK"
+    owner: apache
+    group: apache
+    mode: '0644'
+
+- name: Verify file permissions
+  file:
+    path: /var/www/html
+    owner: apache
+    group: apache
+    mode: '0755'
+    recurse: yes
+
+- name: Clear any cached data
+  shell: |
+    rm -rf /var/cache/httpd/* 2>/dev/null || true
+  ignore_errors: yes
+
+- name: Start application service
+  systemd:
+    name: httpd
+    state: started
+    enabled: yes
+    daemon_reload: yes
+
+- name: Wait for service to be ready
+  wait_for:
+    port: 80
+    delay: 2
+    timeout: 30
+    state: started
+
+- name: Verify application is responding
+  uri:
+    url: "http://localhost/"
+    status_code: 200
+    timeout: 10
+  register: app_check
+  retries: 3
+  delay: 5
+  until: app_check.status == 200
+
+- name: Display redeployment results
+  debug:
+    msg: |
+      Application Redeployment Complete
+      Status: {{ app_check.status }}
+      Service: Running
+      Backup: {{ backup_location.stdout }}
+
+- name: Notify success
+  debug:
+    msg: " Application successfully redeployed and verified"

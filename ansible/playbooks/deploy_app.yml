@@ -1,0 +1,86 @@
+---
+# Quick Web App Deployment - No Roles Required
+- name: Deploy Web Application
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Install Apache web server
+      dnf:
+        name:
+          - httpd
+          - mod_ssl
+        state: present
+
+    - name: Create web content directory
+      file:
+        path: /var/www/html
+        state: directory
+        owner: apache
+        group: apache
+        mode: '0755'
+
+    - name: Deploy index.html
+      copy:
+        dest: /var/www/html/index.html
+        content: |
+          <!DOCTYPE html>
+          <html>
+          <head>
+              <title>Self-Healing Infrastructure</title>
+              <style>
+                  body {
+                      font-family: Arial, sans-serif;
+                      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                      color: white;
+                      display: flex;
+                      justify-content: center;
+                      align-items: center;
+                      min-height: 100vh;
+                      margin: 0;
+                  }
+                  .container {
+                      background: rgba(255,255,255,0.1);
+                      padding: 50px;
+                      border-radius: 20px;
+                      text-align: center;
+                      backdrop-filter: blur(10px);
+                  }
+                  h1 { font-size: 3em; margin-bottom: 20px; }
+                  .status { color: #00ff00; font-size: 1.5em; margin: 20px 0; }
+                  .info { margin: 10px 0; font-size: 1.2em; }
+              </style>
+          </head>
+          <body>
+              <div class="container">
+                  <h1>🚀 Self-Healing Infrastructure</h1>
+                  <div class="status">✓ OPERATIONAL</div>
+                  <div class="info">Instance: {{ ansible_ec2_instance_id | default(ansible_hostname) }}</div>
+                  <div class="info">Region: {{ ansible_ec2_placement_region | default('us-east-1') }}</div>
+                  <div class="info">Deployed: {{ ansible_date_time.date }} {{ ansible_date_time.time }}</div>
+                  <p style="margin-top: 30px; font-size: 0.9em;">Powered by AWS + Terraform + Ansible</p>
+              </div>
+          </body>
+          </html>
+        owner: apache
+        group: apache
+        mode: '0644'
+
+    - name: Create health check endpoint
+      copy:
+        dest: /var/www/html/health
+        content: "OK"
+        owner: apache
+        group: apache
+        mode: '0644'
+
+    - name: Start and enable Apache
+      systemd:
+        name: httpd
+        state: started
+        enabled: yes
+
+    - name: Ensure Apache is running
+      systemd:
+        name: httpd
+        state: restarted

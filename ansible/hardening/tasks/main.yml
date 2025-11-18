@@ -1,0 +1,12 @@
+---
+# ==================================
+# Security Hardening Tasks
+# ==================================
+# These tasks are imported by the hardening playbook
+# They can also be included in other playbooks as needed
+
+- name: Apply system hardening
+  include_tasks: ../playbooks/hardening.yml
+  tags:
+    - hardening
+    - security
