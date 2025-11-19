@@ -1,0 +1,250 @@
+---
+# ==================================
+# App Deploy Role - Main Tasks
+# ==================================
+
+- name: Install required packages
+  dnf:
+    name:
+      - httpd
+      - mod_ssl
+      - python3-pip
+    state: present
+  when: ansible_os_family == "RedHat"
+
+- name: Ensure application directories exist
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ app_user | default('apache') }}"
+    group: "{{ app_group | default('apache') }}"
+    mode: '0755'
+  loop:
+    - "{{ app_directory | default('/var/www/html') }}"
+    - "{{ app_directory | default('/var/www/html') }}/assets"
+    - "{{ app_directory | default('/var/www/html') }}/assets/css"
+    - "{{ app_directory | default('/var/www/html') }}/assets/js"
+    - /var/log/{{ app_name | default('app') }}
+
+- name: Deploy main application page
+  copy:
+    dest: "{{ app_directory | default('/var/www/html') }}/index.html"
+    content: |
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>{{ app_name | default('Self-Healing Infrastructure') }}</title>
+          <link rel="stylesheet" href="/assets/css/style.css">
+      </head>
+      <body>
+          <div class="container">
+              <header>
+                  <h1><× {{ app_name | default('Self-Healing Infrastructure') }}</h1>
+                  <p class="subtitle">Automated Resilience & Recovery</p>
+              </header>
+
+              <section class="status-panel">
+                  <div class="status-item">
+                      <span class="label">Status:</span>
+                      <span class="value healthy"> Operational</span>
+                  </div>
+                  <div class="status-item">
+                      <span class="label">Instance:</span>
+                      <span class="value">{{ ansible_ec2_instance_id | default(ansible_hostname) }}</span>
+                  </div>
+                  <div class="status-item">
+                      <span class="label">Zone:</span>
+                      <span class="value">{{ ansible_ec2_placement_availability_zone | default('N/A') }}</span>
+                  </div>
+                  <div class="status-item">
+                      <span class="label">Deployed:</span>
+                      <span class="value">{{ ansible_date_time.iso8601 }}</span>
+                  </div>
+              </section>
+
+              <section class="info-panel">
+                  <h2>System Information</h2>
+                  <table>
+                      <tr>
+                          <td>Operating System:</td>
+                          <td>{{ ansible_distribution }} {{ ansible_distribution_version }}</td>
+                      </tr>
+                      <tr>
+                          <td>Kernel:</td>
+                          <td>{{ ansible_kernel }}</td>
+                      </tr>
+                      <tr>
+                          <td>Architecture:</td>
+                          <td>{{ ansible_architecture }}</td>
+                      </tr>
+                      <tr>
+                          <td>CPUs:</td>
+                          <td>{{ ansible_processor_vcpus }}</td>
+                      </tr>
+                      <tr>
+                          <td>Memory:</td>
+                          <td>{{ (ansible_memtotal_mb / 1024) | round(2) }} GB</td>
+                      </tr>
+                      <tr>
+                          <td>Hostname:</td>
+                          <td>{{ ansible_hostname }}</td>
+                      </tr>
+                  </table>
+              </section>
+
+              <section class="features-panel">
+                  <h2>Self-Healing Capabilities</h2>
+                  <ul>
+                      <li> Automatic service recovery</li>
+                      <li> Disk space management</li>
+                      <li> Memory optimization</li>
+                      <li> Auto-scaling based on load</li>
+                      <li> Health monitoring & alerts</li>
+                      <li> Automated security hardening</li>
+                  </ul>
+              </section>
+
+              <footer>
+                  <p>Powered by AWS | Terraform | Ansible | Lambda | CloudWatch</p>
+              </footer>
+          </div>
+          <script src="/assets/js/app.js"></script>
+      </body>
+      </html>
+    owner: "{{ app_user | default('apache') }}"
+    group: "{{ app_group | default('apache') }}"
+    mode: '0644'
+  notify: reload httpd
+
+- name: Deploy CSS styles
+  copy:
+    dest: "{{ app_directory | default('/var/www/html') }}/assets/css/style.css"
+    content: |
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          min-height: 100vh;
+          padding: 20px;
+      }
+      .container {
+          max-width: 1000px;
+          margin: 0 auto;
+          background: white;
+          border-radius: 12px;
+          box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+          overflow: hidden;
+      }
+      header {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          padding: 40px;
+          text-align: center;
+      }
+      header h1 { font-size: 2.5em; margin-bottom: 10px; }
+      .subtitle { font-size: 1.2em; opacity: 0.9; }
+      section { padding: 30px 40px; }
+      .status-panel {
+          background: #f8f9fa;
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 20px;
+      }
+      .status-item { text-align: center; }
+      .label { display: block; font-weight: bold; color: #6c757d; margin-bottom: 5px; }
+      .value { display: block; font-size: 1.1em; }
+      .healthy { color: #28a745; font-weight: bold; }
+      table { width: 100%; border-collapse: collapse; }
+      td { padding: 12px; border-bottom: 1px solid #dee2e6; }
+      td:first-child { font-weight: bold; color: #6c757d; width: 40%; }
+      .features-panel ul { list-style: none; }
+      .features-panel li {
+          padding: 12px;
+          margin: 8px 0;
+          background: #e7f3ff;
+          border-left: 4px solid #667eea;
+          border-radius: 4px;
+      }
+      footer {
+          background: #f8f9fa;
+          text-align: center;
+          padding: 20px;
+          color: #6c757d;
+      }
+    owner: "{{ app_user | default('apache') }}"
+    group: "{{ app_group | default('apache') }}"
+    mode: '0644'
+
+- name: Deploy JavaScript
+  copy:
+    dest: "{{ app_directory | default('/var/www/html') }}/assets/js/app.js"
+    content: |
+      // Auto-refresh page every 5 minutes
+      setTimeout(() => location.reload(), 300000);
+
+      // Display last update time
+      document.addEventListener('DOMContentLoaded', () => {
+          console.log('Self-Healing Infrastructure - Status: Healthy');
+      });
+    owner: "{{ app_user | default('apache') }}"
+    group: "{{ app_group | default('apache') }}"
+    mode: '0644'
+
+- name: Create health check endpoint
+  copy:
+    dest: "{{ app_directory | default('/var/www/html') }}/health"
+    content: "OK"
+    owner: "{{ app_user | default('apache') }}"
+    group: "{{ app_group | default('apache') }}"
+    mode: '0644'
+
+- name: Configure Apache virtual host
+  copy:
+    dest: /etc/httpd/conf.d/app.conf
+    content: |
+      <VirtualHost *:80>
+          ServerAdmin admin@localhost
+          DocumentRoot {{ app_directory | default('/var/www/html') }}
+
+          <Directory {{ app_directory | default('/var/www/html') }}>
+              Options -Indexes +FollowSymLinks
+              AllowOverride All
+              Require all granted
+          </Directory>
+
+          ErrorLog /var/log/{{ app_name | default('app') }}/error.log
+          CustomLog /var/log/{{ app_name | default('app') }}/access.log combined
+      </VirtualHost>
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart httpd
+
+- name: Ensure Apache is started and enabled
+  systemd:
+    name: httpd
+    state: started
+    enabled: yes
+    daemon_reload: yes
+
+- name: Configure log rotation
+  copy:
+    dest: /etc/logrotate.d/{{ app_name | default('app') }}
+    content: |
+      /var/log/{{ app_name | default('app') }}/*.log {
+          daily
+          rotate 7
+          compress
+          delaycompress
+          notifempty
+          create 0640 {{ app_user | default('apache') }} {{ app_group | default('apache') }}
+          sharedscripts
+          postrotate
+              systemctl reload httpd > /dev/null 2>&1 || true
+          endscript
+      }
+    owner: root
+    group: root
+    mode: '0644'

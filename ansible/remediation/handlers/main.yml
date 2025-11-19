@@ -1,0 +1,55 @@
+---
+# ==================================
+# Remediation Handlers
+# ==================================
+# Handlers for common remediation actions
+
+- name: restart httpd
+  systemd:
+    name: httpd
+    state: restarted
+    daemon_reload: yes
+  listen: "restart web service"
+
+- name: reload httpd
+  systemd:
+    name: httpd
+    state: reloaded
+  listen: "reload web service"
+
+- name: restart sshd
+  systemd:
+    name: sshd
+    state: restarted
+  listen: "restart ssh service"
+
+- name: clear cache
+  shell: |
+    sync
+    echo 3 > /proc/sys/vm/drop_caches
+  listen: "clear system cache"
+
+- name: rotate logs
+  shell: |
+    logrotate -f /etc/logrotate.conf
+  listen: "rotate system logs"
+  ignore_errors: yes
+
+- name: reload systemd
+  systemd:
+    daemon_reload: yes
+  listen: "reload systemd"
+
+- name: notify sns
+  uri:
+    url: "{{ sns_topic_arn }}"
+    method: POST
+    body_format: json
+    body:
+      message: "Remediation completed on {{ inventory_hostname }}"
+      subject: "Self-Healing Action Completed"
+  delegate_to: localhost
+  become: no
+  listen: "send notification"
+  when: sns_topic_arn is defined
+  ignore_errors: yes

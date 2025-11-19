@@ -1,0 +1,116 @@
+---
+# ==================================
+# Health Check Remediation Task
+# ==================================
+# Performs comprehensive system health check
+
+- name: Gather system health metrics
+  block:
+    - name: Check system uptime
+      command: uptime -p
+      register: system_uptime
+      changed_when: false
+
+    - name: Check CPU load
+      shell: uptime | awk -F'load average:' '{print $2}' | awk '{print $1,$2,$3}'
+      register: cpu_load
+      changed_when: false
+
+    - name: Check memory usage
+      shell: free -h | grep Mem | awk '{print $3 "/" $2}'
+      register: memory_status
+      changed_when: false
+
+    - name: Check disk usage
+      shell: df -h / | tail -1 | awk '{print $5 " used of " $2}'
+      register: disk_status
+      changed_when: false
+
+- name: Check critical services status
+  systemd:
+    name: "{{ item }}"
+  register: service_status
+  loop:
+    - httpd
+    - sshd
+  ignore_errors: yes
+
+- name: Check network connectivity
+  shell: |
+    ping -c 3 8.8.8.8 > /dev/null 2>&1 && echo "OK" || echo "FAIL"
+  register: network_check
+  changed_when: false
+
+- name: Check for failed systemd units
+  shell: |
+    systemctl --failed --no-pager | grep failed || echo "No failed units"
+  register: failed_units
+  changed_when: false
+
+- name: Check disk I/O wait
+  shell: |
+    iostat -x 1 2 | tail -1 | awk '{print $12}'
+  register: io_wait
+  changed_when: false
+  ignore_errors: yes
+
+- name: Display comprehensive health status
+  debug:
+    msg: |
+      ========================================
+      SYSTEM HEALTH CHECK REPORT
+      ========================================
+      Uptime: {{ system_uptime.stdout }}
+      Load Average: {{ cpu_load.stdout }}
+      Memory: {{ memory_status.stdout }}
+      Disk: {{ disk_status.stdout }}
+      Network: {{ network_check.stdout }}
+      I/O Wait: {{ io_wait.stdout | default('N/A') }}%
+
+      Service Status:
+      {% for service in service_status.results %}
+      - {{ service.item }}: {{ service.status.ActiveState | default('unknown') }}
+      {% endfor %}
+
+      Failed Units:
+      {{ failed_units.stdout }}
+      ========================================
+
+- name: Identify and report issues
+  set_fact:
+    health_issues: []
+
+- name: Check for high CPU load
+  set_fact:
+    health_issues: "{{ health_issues + ['High CPU load detected'] }}"
+  when: cpu_load.stdout.split()[0] | float > 2.0
+
+- name: Check for service failures
+  set_fact:
+    health_issues: "{{ health_issues + ['Service ' + item.item + ' is not running'] }}"
+  loop: "{{ service_status.results }}"
+  when: item.status.ActiveState is defined and item.status.ActiveState != 'active'
+
+- name: Check for network issues
+  set_fact:
+    health_issues: "{{ health_issues + ['Network connectivity issue detected'] }}"
+  when: network_check.stdout == 'FAIL'
+
+- name: Display health issues if any
+  debug:
+    msg: "{{ health_issues }}"
+  when: health_issues | length > 0
+
+- name: Auto-remediate identified issues
+  block:
+    - name: Restart failed services
+      systemd:
+        name: "{{ item.item }}"
+        state: restarted
+      loop: "{{ service_status.results }}"
+      when: item.status.ActiveState is defined and item.status.ActiveState != 'active'
+      ignore_errors: yes
+
+- name: Final health status
+  debug:
+    msg: "{{ '✓ System is healthy' if health_issues | length == 0 else '⚠ Issues detected and remediation attempted' }}"

@@ -1,0 +1,41 @@
+# ==================================
+# Self-Healing Infrastructure Configuration Example
+# Copy this file to terraform.tfvars and customize with your values
+# ==================================
+
+# AWS Configuration
+aws_region  = "us-east-1"
+environment = "prod"  # Options: dev, staging, prod
+
+# VPC Configuration
+vpc_cidr             = "10.0.0.0/16"
+availability_zones   = ["us-east-1a", "us-east-1b"]
+public_subnet_cidrs  = ["10.0.1.0/24", "10.0.2.0/24"]
+private_subnet_cidrs = ["10.0.11.0/24", "10.0.12.0/24"]
+
+# EC2 Configuration
+instance_type      = "t3.micro"
+key_pair_name      = "your-key-pair-name"  # REQUIRED: Create this first in AWS!
+ssh_cidr_blocks    = []  # Example: ["1.2.3.4/32"] or leave empty to disable SSH
+min_instance_count = 2
+max_instance_count = 4
+desired_instance_count = 2
+
+# Monitoring Thresholds
+cpu_threshold      = 80   # Percentage
+cpu_threshold_low  = 20   # Percentage (for scale down)
+memory_threshold   = 85   # Percentage
+disk_threshold     = 85   # Percentage
+
+# Notifications
+alert_emails = ["your-email@example.com"]  # REQUIRED: Add your email(s)
+
+# Lambda Configuration
+lambda_zip_path = "../lambda/functions/trigger_remediation/function.zip"
+
+# Custom Tags (Optional)
+tags = {
+  Owner      = "DevOps Team"
+  CostCenter = "Engineering"
+  Backup     = "Daily"
+}

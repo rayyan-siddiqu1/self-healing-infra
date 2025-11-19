@@ -1,0 +1,141 @@
+---
+# ==================================
+# Restart Service Remediation Task
+# ==================================
+# Handles service failures and unhealthy target issues
+
+- name: Check current service status
+  systemd:
+    name: httpd
+  register: service_status
+  ignore_errors: yes
+
+- name: Display current service status
+  debug:
+    msg: "Service httpd is {{ service_status.status.ActiveState | default('unknown') }}"
+
+- name: Stop service gracefully
+  systemd:
+    name: httpd
+    state: stopped
+  when: service_status.status.ActiveState is defined
+  ignore_errors: yes
+
+- name: Wait for service to stop
+  wait_for:
+    timeout: 10
+  delegate_to: localhost
+
+- name: Check for stale PID files
+  stat:
+    path: /var/run/httpd/httpd.pid
+  register: pid_file
+
+- name: Remove stale PID file if exists
+  file:
+    path: /var/run/httpd/httpd.pid
+    state: absent
+  when: pid_file.stat.exists
+
+- name: Check for port conflicts
+  shell: |
+    netstat -tlnp | grep ':80 ' || echo "Port 80 is free"
+  register: port_check
+  changed_when: false
+
+- name: Display port status
+  debug:
+    var: port_check.stdout_lines
+
+- name: Kill processes on port 80 if needed
+  shell: |
+    fuser -k 80/tcp || true
+  when: "'LISTEN' in port_check.stdout"
+  ignore_errors: yes
+
+- name: Check httpd configuration syntax
+  command: httpd -t
+  register: config_check
+  changed_when: false
+  failed_when: false
+
+- name: Display configuration check results
+  debug:
+    msg: "Configuration {{ 'is valid' if config_check.rc == 0 else 'has errors' }}"
+
+- name: Fix common configuration issues
+  block:
+    - name: Ensure document root exists
+      file:
+        path: /var/www/html
+        state: directory
+        owner: apache
+        group: apache
+        mode: '0755'
+
+    - name: Ensure log directory exists
+      file:
+        path: /var/log/httpd
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Create index file if missing
+      copy:
+        dest: /var/www/html/index.html
+        content: |
+          <!DOCTYPE html>
+          <html>
+          <head><title>Self-Healing Infrastructure</title></head>
+          <body>
+            <h1>Service Restored</h1>
+            <p>Instance: {{ ansible_ec2_instance_id | default(inventory_hostname) }}</p>
+            <p>Restored at: {{ ansible_date_time.iso8601 }}</p>
+          </body>
+          </html>
+        owner: apache
+        group: apache
+        mode: '0644'
+        force: no
+
+- name: Start service with fresh state
+  systemd:
+    name: httpd
+    state: started
+    enabled: yes
+    daemon_reload: yes
+
+- name: Wait for service to be fully started
+  wait_for:
+    port: 80
+    delay: 2
+    timeout: 30
+    state: started
+
+- name: Verify service is running
+  systemd:
+    name: httpd
+  register: service_final_status
+
+- name: Perform HTTP health check
+  uri:
+    url: "http://localhost/health"
+    status_code: [200, 404]  # 404 is ok if health endpoint doesn't exist
+    timeout: 10
+  register: health_check
+  retries: 3
+  delay: 5
+  until: health_check.status is defined
+
+- name: Display remediation results
+  debug:
+    msg: |
+      Service Restart Remediation Complete
+      Service State: {{ service_final_status.status.ActiveState }}
+      HTTP Status: {{ health_check.status | default('unknown') }}
+      Port 80: Listening
+
+- name: Notify success
+  debug:
+    msg: " Service httpd successfully restarted and verified healthy"

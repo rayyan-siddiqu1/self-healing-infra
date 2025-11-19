@@ -1,0 +1,24 @@
+---
+# ==================================
+# Ansible Requirements
+# ==================================
+# Install these collections with:
+# ansible-galaxy collection install -r requirements.yml
+
+collections:
+  # AWS collection for dynamic inventory and AWS modules
+  - name: amazon.aws
+    version: ">=6.0.0"
+
+  # Community general collection
+  - name: community.general
+    version: ">=7.0.0"
+
+  # POSIX collection for system tasks
+  - name: ansible.posix
+    version: ">=1.5.0"
+
+# Optional: Add community roles if needed
+# roles:
+#   - name: geerlingguy.security
+#     version: "2.3.0"
