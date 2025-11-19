@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-# self-healing-infra
-it self heals lol
-=======
 # Self-Healing Infrastructure on AWS
 
 A fully automated, self-healing infrastructure platform built on AWS using Terraform and Ansible.
@@ -31,8 +27,6 @@ ansible-playbook -i inventories/prod/hosts_ssm.ini playbooks/deploy_app.yml
 ```
 
 ### Step 3: Access Your Application
-
-Visit: **http://self-healing-infra-prod-alb-863526104.us-east-1.elb.amazonaws.com**
 
 ---
 
@@ -279,8 +273,6 @@ cp /mnt/c/Users/rayyan/.aws/* ~/.aws/
 ---
 
 ## 📚 Additional Documentation
-
-- **[CLAUDE.md](CLAUDE.md)** - Architecture and detailed design
 - **[QUICKSTART.md](QUICKSTART.md)** - Infrastructure deployment guide
 - **[WINDOWS_ANSIBLE_SETUP.md](WINDOWS_ANSIBLE_SETUP.md)** - WSL setup details
 - **[ANSIBLE_GUIDE.md](ANSIBLE_GUIDE.md)** - Advanced Ansible usage
@@ -356,8 +348,3 @@ For issues:
 2. **`deploy_app.yml`** - Deploys your application to all instances
 
 That's it! Everything else is automated. 🚀
-
----
-
-**Built with:** AWS • Terraform • Ansible • Lambda • CloudWatch • SSM
->>>>>>> master
