@@ -1,0 +1,6 @@
+# AWS SDK for Python (included in Lambda runtime, listed for local development)
+boto3>=1.34.0
+botocore>=1.34.0
+
+# No additional external dependencies required
+# The trigger_remediation Lambda uses only Python standard library and boto3

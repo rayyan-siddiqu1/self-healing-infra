@@ -1,0 +1,326 @@
+name: Security Scanning
+
+on:
+  push:
+    branches:
+      - master
+      - main
+  pull_request:
+    branches:
+      - master
+      - main
+  schedule:
+    # Run security scans daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  secret-scanning:
+    name: Secret Scanning
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run TruffleHog
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --only-verified
+
+  dependency-scanning:
+    name: Dependency Scanning
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Safety
+        run: pip install safety
+
+      - name: Scan Python dependencies
+        run: |
+          echo "Scanning Lambda dependencies..."
+          for req in lambda/functions/*/requirements.txt; do
+            if [ -f "$req" ] && [ -s "$req" ]; then
+              echo "Scanning $req"
+              safety check -r "$req" --output json > "safety-$(basename $(dirname $req)).json" || true
+            fi
+          done
+        continue-on-error: true
+
+      - name: Upload Safety reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: safety-reports
+          path: safety-*.json
+          retention-days: 30
+
+  infrastructure-scanning:
+    name: Infrastructure Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run tfsec
+        uses: aquasecurity/tfsec-action@v1.0.3
+        with:
+          working_directory: './terraform'
+          format: sarif
+          soft_fail: true
+
+      - name: Upload tfsec SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: tfsec.sarif
+          category: tfsec
+
+      - name: Run Checkov
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: ./terraform
+          framework: terraform
+          output_format: cli,sarif
+          output_file_path: console,checkov-results.sarif
+          soft_fail: true
+          skip_check: CKV_AWS_126  # Example: Skip specific checks if needed
+
+      - name: Upload Checkov SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: checkov-results.sarif
+          category: checkov
+
+      - name: Run Terrascan
+        uses: tenable/terrascan-action@main
+        with:
+          iac_type: 'terraform'
+          iac_dir: './terraform'
+          policy_type: 'aws'
+          sarif_upload: true
+          non_recursive: false
+          verbose: true
+        continue-on-error: true
+
+  code-scanning:
+    name: Code Security Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: python
+          queries: security-extended,security-and-quality
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:python"
+
+  python-security:
+    name: Python Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Bandit
+        run: pip install bandit[toml]
+
+      - name: Run Bandit
+        run: |
+          bandit -r lambda/ -f json -o bandit-report.json
+          bandit -r lambda/ -f screen
+        continue-on-error: true
+
+      - name: Upload Bandit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-report
+          path: bandit-report.json
+          retention-days: 30
+
+  container-scanning:
+    name: Container Image Scan
+    runs-on: ubuntu-latest
+    if: false  # Enable when you have Docker images
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
+          category: trivy
+
+  license-compliance:
+    name: License Compliance Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install pip-licenses
+        run: pip install pip-licenses
+
+      - name: Check licenses
+        run: |
+          for req in lambda/functions/*/requirements.txt; do
+            if [ -f "$req" ] && [ -s "$req" ]; then
+              echo "Checking licenses for $req"
+              pip install -r "$req"
+              pip-licenses --format=json --output-file="licenses-$(basename $(dirname $req)).json"
+              pip-licenses --format=markdown
+            fi
+          done
+        continue-on-error: true
+
+      - name: Upload license reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: license-reports
+          path: licenses-*.json
+          retention-days: 30
+
+  sast-semgrep:
+    name: SAST with Semgrep
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Semgrep
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: >-
+            p/security-audit
+            p/secrets
+            p/owasp-top-ten
+            p/python
+
+  aws-security-check:
+    name: AWS Security Best Practices
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Prowler (AWS Security)
+        run: |
+          # This is a placeholder for Prowler scanning
+          # In production, you'd run Prowler against your actual AWS account
+          echo "AWS security scanning would run here"
+          echo "Consider using Prowler, ScoutSuite, or AWS Security Hub"
+        continue-on-error: true
+
+  security-scorecard:
+    name: OpenSSF Scorecard
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Run Scorecard
+        uses: ossf/scorecard-action@v2
+        with:
+          results_file: scorecard-results.sarif
+          results_format: sarif
+          publish_results: true
+
+      - name: Upload Scorecard SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: scorecard-results.sarif
+          category: scorecard
+
+  security-summary:
+    name: Security Summary
+    runs-on: ubuntu-latest
+    needs: [secret-scanning, dependency-scanning, infrastructure-scanning, python-security]
+    if: always()
+
+    steps:
+      - name: Create security summary
+        run: |
+          echo "# Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Scan Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Secret Scanning: ${{ needs.secret-scanning.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Dependency Scanning: ${{ needs.dependency-scanning.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Infrastructure Scanning: ${{ needs.infrastructure-scanning.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Python Security: ${{ needs.python-security.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ needs.secret-scanning.result }}" != "success" ] || \
+             [ "${{ needs.dependency-scanning.result }}" != "success" ] || \
+             [ "${{ needs.infrastructure-scanning.result }}" != "success" ] || \
+             [ "${{ needs.python-security.result }}" != "success" ]; then
+            echo "⚠️ Some security scans reported issues. Please review the results." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ All security scans passed!" >> $GITHUB_STEP_SUMMARY
+          fi

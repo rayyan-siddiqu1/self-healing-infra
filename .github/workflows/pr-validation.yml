@@ -1,0 +1,269 @@
+name: Pull Request Validation
+
+on:
+  pull_request:
+    branches:
+      - master
+      - main
+    types: [opened, synchronize, reopened]
+
+jobs:
+  pr-info:
+    name: PR Information
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get PR info
+        id: pr-info
+        run: |
+          echo "pr-number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+          echo "pr-title=${{ github.event.pull_request.title }}" >> $GITHUB_OUTPUT
+          echo "pr-author=${{ github.event.pull_request.user.login }}" >> $GITHUB_OUTPUT
+
+          # Count changed files
+          FILES_CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | wc -l)
+          echo "files-changed=$FILES_CHANGED" >> $GITHUB_OUTPUT
+
+          # Count lines changed
+          LINES_ADDED=$(git diff --numstat origin/${{ github.base_ref }}...HEAD | awk '{sum+=$1} END {print sum}')
+          LINES_DELETED=$(git diff --numstat origin/${{ github.base_ref }}...HEAD | awk '{sum+=$2} END {print sum}')
+          echo "lines-added=$LINES_ADDED" >> $GITHUB_OUTPUT
+          echo "lines-deleted=$LINES_DELETED" >> $GITHUB_OUTPUT
+
+      - name: Comment PR info
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const output = `## Pull Request Summary 📋
+
+            **Files Changed:** ${{ steps.pr-info.outputs.files-changed }}
+            **Lines Added:** +${{ steps.pr-info.outputs.lines-added }}
+            **Lines Deleted:** -${{ steps.pr-info.outputs.lines-deleted }}
+
+            ### Changed Components
+            `;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            });
+
+  changed-files:
+    name: Detect Changed Files
+    runs-on: ubuntu-latest
+    outputs:
+      terraform: ${{ steps.filter.outputs.terraform }}
+      lambda: ${{ steps.filter.outputs.lambda }}
+      ansible: ${{ steps.filter.outputs.ansible }}
+      docs: ${{ steps.filter.outputs.docs }}
+      workflows: ${{ steps.filter.outputs.workflows }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check changed files
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            terraform:
+              - 'terraform/**'
+              - 'environments/**'
+            lambda:
+              - 'lambda/**'
+            ansible:
+              - 'ansible/**'
+            docs:
+              - '**.md'
+              - 'docs/**'
+            workflows:
+              - '.github/workflows/**'
+
+  code-quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check commit messages
+        run: |
+          echo "Checking commit messages..."
+          git log --format=%B -n 10 origin/${{ github.base_ref }}..HEAD
+
+      - name: Check for merge conflicts markers
+        run: |
+          echo "Checking for merge conflict markers..."
+          if git grep -n "^<<<<<<< \|^=======$\|^>>>>>>> " -- ':!.github/workflows/*'; then
+            echo "Error: Merge conflict markers found!"
+            exit 1
+          fi
+          echo "No merge conflict markers found."
+
+      - name: Check for TODO/FIXME comments
+        run: |
+          echo "Checking for TODO/FIXME comments in changed files..."
+          git diff --name-only origin/${{ github.base_ref }}...HEAD | \
+            xargs grep -n "TODO\|FIXME\|XXX\|HACK" || true
+
+      - name: Check file sizes
+        run: |
+          echo "Checking for large files..."
+          git diff --name-only origin/${{ github.base_ref }}...HEAD | while read file; do
+            if [ -f "$file" ]; then
+              size=$(wc -c < "$file")
+              if [ $size -gt 1048576 ]; then
+                echo "Warning: Large file detected: $file ($size bytes)"
+              fi
+            fi
+          done
+
+      - name: Check for secrets
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --only-verified
+
+  markdown-lint:
+    name: Markdown Linting
+    runs-on: ubuntu-latest
+    needs: changed-files
+    if: needs.changed-files.outputs.docs == 'true'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Lint Markdown files
+        uses: articulate/actions-markdownlint@v1
+        with:
+          config: .markdownlint.json
+          files: '**/*.md'
+          ignore: node_modules
+        continue-on-error: true
+
+  shellcheck:
+    name: Shellcheck
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run ShellCheck
+        uses: ludeeus/action-shellcheck@master
+        with:
+          scandir: './scripts'
+          severity: warning
+        continue-on-error: true
+
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+          deny-licenses: GPL-3.0, AGPL-3.0
+
+  size-check:
+    name: PR Size Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check PR size
+        run: |
+          FILES_CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | wc -l)
+          LINES_CHANGED=$(git diff --shortstat origin/${{ github.base_ref }}...HEAD | awk '{print $4+$6}')
+
+          echo "Files changed: $FILES_CHANGED"
+          echo "Lines changed: $LINES_CHANGED"
+
+          if [ "$FILES_CHANGED" -gt 50 ]; then
+            echo "::warning::This PR modifies more than 50 files ($FILES_CHANGED). Consider breaking it into smaller PRs."
+          fi
+
+          if [ "$LINES_CHANGED" -gt 1000 ]; then
+            echo "::warning::This PR changes more than 1000 lines ($LINES_CHANGED). Consider breaking it into smaller PRs."
+          fi
+
+  label-pr:
+    name: Auto-label PR
+    runs-on: ubuntu-latest
+    needs: changed-files
+    permissions:
+      pull-requests: write
+      contents: read
+
+    steps:
+      - name: Label PR based on changed files
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const labels = [];
+
+            if ('${{ needs.changed-files.outputs.terraform }}' === 'true') {
+              labels.push('terraform');
+            }
+            if ('${{ needs.changed-files.outputs.lambda }}' === 'true') {
+              labels.push('lambda');
+            }
+            if ('${{ needs.changed-files.outputs.ansible }}' === 'true') {
+              labels.push('ansible');
+            }
+            if ('${{ needs.changed-files.outputs.docs }}' === 'true') {
+              labels.push('documentation');
+            }
+            if ('${{ needs.changed-files.outputs.workflows }}' === 'true') {
+              labels.push('ci-cd');
+            }
+
+            if (labels.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: labels
+              });
+            }
+
+  all-checks-passed:
+    name: All Checks Passed
+    runs-on: ubuntu-latest
+    needs: [pr-info, changed-files, code-quality, shellcheck]
+    if: always()
+
+    steps:
+      - name: Check all jobs
+        run: |
+          if [ "${{ needs.pr-info.result }}" != "success" ] || \
+             [ "${{ needs.changed-files.result }}" != "success" ] || \
+             [ "${{ needs.code-quality.result }}" != "success" ]; then
+            echo "Some checks failed"
+            exit 1
+          fi
+          echo "All checks passed!"
