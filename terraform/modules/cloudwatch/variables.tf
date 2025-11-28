@@ -130,6 +130,18 @@ variable "create_dashboard" {
   default     = true
 }
 
+variable "aws_region" {
+  description = "AWS region for dashboard"
+  type        = string
+  default     = "us-east-1"
+}
+
+variable "create_notification_metrics" {
+  description = "Create metric filters for notification Lambda"
+  type        = bool
+  default     = true
+}
+
 variable "tags" {
   description = "Additional tags to apply to all resources"
   type        = map(string)

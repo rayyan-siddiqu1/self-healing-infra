@@ -1,0 +1,392 @@
+{
+  "alarms": [
+    {
+      "name": "ec2-cpu-utilization-high",
+      "description": "Triggers when EC2 CPU utilization exceeds threshold",
+      "metric": {
+        "namespace": "AWS/EC2",
+        "name": "CPUUtilization",
+        "statistic": "Average",
+        "period": 300,
+        "evaluationPeriods": 2,
+        "threshold": 80,
+        "comparisonOperator": "GreaterThanThreshold"
+      },
+      "actions": {
+        "alarm": ["sns_topic", "scale_up_policy"],
+        "ok": ["sns_topic"],
+        "insufficientData": []
+      },
+      "treatMissingData": "notBreaching",
+      "severity": "warning"
+    },
+    {
+      "name": "ec2-cpu-utilization-critical",
+      "description": "Critical: CPU utilization extremely high",
+      "metric": {
+        "namespace": "AWS/EC2",
+        "name": "CPUUtilization",
+        "statistic": "Average",
+        "period": 300,
+        "evaluationPeriods": 1,
+        "threshold": 95,
+        "comparisonOperator": "GreaterThanThreshold"
+      },
+      "actions": {
+        "alarm": ["sns_topic", "pagerduty"],
+        "ok": ["sns_topic"]
+      },
+      "treatMissingData": "notBreaching",
+      "severity": "critical"
+    },
+    {
+      "name": "ec2-cpu-utilization-low",
+      "description": "Triggers when CPU utilization is consistently low",
+      "metric": {
+        "namespace": "AWS/EC2",
+        "name": "CPUUtilization",
+        "statistic": "Average",
+        "period": 300,
+        "evaluationPeriods": 3,
+        "threshold": 20,
+        "comparisonOperator": "LessThanThreshold"
+      },
+      "actions": {
+        "alarm": ["scale_down_policy"],
+        "ok": []
+      },
+      "treatMissingData": "notBreaching",
+      "severity": "info"
+    },
+    {
+      "name": "memory-utilization-high",
+      "description": "Memory utilization exceeds threshold",
+      "metric": {
+        "namespace": "CWAgent",
+        "name": "mem_used_percent",
+        "statistic": "Average",
+        "period": 300,
+        "evaluationPeriods": 2,
+        "threshold": 85,
+        "comparisonOperator": "GreaterThanThreshold"
+      },
+      "actions": {
+        "alarm": ["sns_topic"],
+        "ok": ["sns_topic"]
+      },
+      "treatMissingData": "notBreaching",
+      "severity": "warning"
+    },
+    {
+      "name": "memory-utilization-critical",
+      "description": "Critical: Memory almost exhausted",
+      "metric": {
+        "namespace": "CWAgent",
+        "name": "mem_used_percent",
+        "statistic": "Average",
+        "period": 300,
+        "evaluationPeriods": 1,
+        "threshold": 95,
+        "comparisonOperator": "GreaterThanThreshold"
+      },
+      "actions": {
+        "alarm": ["sns_topic", "pagerduty"],
+        "ok": ["sns_topic"]
+      },
+      "treatMissingData": "notBreaching",
+      "severity": "critical"
+    },
+    {
+      "name": "disk-utilization-high",
+      "description": "Disk space running low",
+      "metric": {
+        "namespace": "CWAgent",
+        "name": "disk_used_percent",
+        "statistic": "Average",
+        "period": 300,
+        "evaluationPeriods": 1,
+        "threshold": 85,
+        "comparisonOperator": "GreaterThanThreshold"
+      },
+      "actions": {
+        "alarm": ["sns_topic"],
+        "ok": ["sns_topic"]
+      },
+      "treatMissingData": "notBreaching",
+      "severity": "warning"
+    },
+    {
+      "name": "disk-utilization-critical",
+      "description": "Critical: Disk almost full",
+      "metric": {
+        "namespace": "CWAgent",
+        "name": "disk_used_percent",
+        "statistic": "Average",
+        "period": 300,
+        "evaluationPeriods": 1,
+        "threshold": 95,
+        "comparisonOperator": "GreaterThanThreshold"
+      },
+      "actions": {
+        "alarm": ["sns_topic", "pagerduty"],
+        "ok": ["sns_topic"]
+      },
+      "treatMissingData": "notBreaching",
+      "severity": "critical"
+    },
+    {
+      "name": "alb-unhealthy-targets",
+      "description": "ALB has unhealthy targets",
+      "metric": {
+        "namespace": "AWS/ApplicationELB",
+        "name": "UnHealthyHostCount",
+        "statistic": "Average",
+        "period": 300,
+        "evaluationPeriods": 2,
+        "threshold": 1,
+        "comparisonOperator": "GreaterThanOrEqualToThreshold"
+      },
+      "actions": {
+        "alarm": ["sns_topic"],
+        "ok": ["sns_topic"]
+      },
+      "treatMissingData": "notBreaching",
+      "severity": "error"
+    },
+    {
+      "name": "alb-no-healthy-targets",
+      "description": "Critical: No healthy targets available",
+      "metric": {
+        "namespace": "AWS/ApplicationELB",
+        "name": "HealthyHostCount",
+        "statistic": "Average",
+        "period": 60,
+        "evaluationPeriods": 2,
+        "threshold": 1,
+        "comparisonOperator": "LessThanThreshold"
+      },
+      "actions": {
+        "alarm": ["sns_topic", "pagerduty"],
+        "ok": ["sns_topic"]
+      },
+      "treatMissingData": "breaching",
+      "severity": "critical"
+    },
+    {
+      "name": "alb-high-response-time",
+      "description": "ALB response time is high",
+      "metric": {
+        "namespace": "AWS/ApplicationELB",
+        "name": "TargetResponseTime",
+        "statistic": "Average",
+        "period": 300,
+        "evaluationPeriods": 2,
+        "threshold": 1.0,
+        "comparisonOperator": "GreaterThanThreshold"
+      },
+      "actions": {
+        "alarm": ["sns_topic"],
+        "ok": ["sns_topic"]
+      },
+      "treatMissingData": "notBreaching",
+      "severity": "warning"
+    },
+    {
+      "name": "alb-5xx-errors-high",
+      "description": "High rate of 5xx errors from targets",
+      "metric": {
+        "namespace": "AWS/ApplicationELB",
+        "name": "HTTPCode_Target_5XX_Count",
+        "statistic": "Sum",
+        "period": 300,
+        "evaluationPeriods": 1,
+        "threshold": 10,
+        "comparisonOperator": "GreaterThanThreshold"
+      },
+      "actions": {
+        "alarm": ["sns_topic"],
+        "ok": ["sns_topic"]
+      },
+      "treatMissingData": "notBreaching",
+      "severity": "error"
+    },
+    {
+      "name": "lambda-errors-high",
+      "description": "Lambda function error rate is high",
+      "metric": {
+        "namespace": "AWS/Lambda",
+        "name": "Errors",
+        "statistic": "Sum",
+        "period": 300,
+        "evaluationPeriods": 1,
+        "threshold": 5,
+        "comparisonOperator": "GreaterThanThreshold"
+      },
+      "actions": {
+        "alarm": ["sns_topic"],
+        "ok": ["sns_topic"]
+      },
+      "treatMissingData": "notBreaching",
+      "severity": "error"
+    },
+    {
+      "name": "lambda-throttles",
+      "description": "Lambda function is being throttled",
+      "metric": {
+        "namespace": "AWS/Lambda",
+        "name": "Throttles",
+        "statistic": "Sum",
+        "period": 300,
+        "evaluationPeriods": 1,
+        "threshold": 1,
+        "comparisonOperator": "GreaterThanThreshold"
+      },
+      "actions": {
+        "alarm": ["sns_topic"],
+        "ok": ["sns_topic"]
+      },
+      "treatMissingData": "notBreaching",
+      "severity": "warning"
+    },
+    {
+      "name": "lambda-duration-high",
+      "description": "Lambda function duration approaching timeout",
+      "metric": {
+        "namespace": "AWS/Lambda",
+        "name": "Duration",
+        "statistic": "Average",
+        "period": 300,
+        "evaluationPeriods": 2,
+        "threshold": 25000,
+        "comparisonOperator": "GreaterThanThreshold"
+      },
+      "actions": {
+        "alarm": ["sns_topic"],
+        "ok": []
+      },
+      "treatMissingData": "notBreaching",
+      "severity": "warning",
+      "note": "Threshold is 25 seconds for a 30 second timeout"
+    },
+    {
+      "name": "lambda-concurrent-executions-high",
+      "description": "Lambda concurrent executions approaching limit",
+      "metric": {
+        "namespace": "AWS/Lambda",
+        "name": "ConcurrentExecutions",
+        "statistic": "Maximum",
+        "period": 300,
+        "evaluationPeriods": 1,
+        "threshold": 800,
+        "comparisonOperator": "GreaterThanThreshold"
+      },
+      "actions": {
+        "alarm": ["sns_topic"],
+        "ok": []
+      },
+      "treatMissingData": "notBreaching",
+      "severity": "warning",
+      "note": "Default Lambda concurrent execution limit is 1000"
+    },
+    {
+      "name": "ec2-status-check-failed",
+      "description": "EC2 instance failed status check",
+      "metric": {
+        "namespace": "AWS/EC2",
+        "name": "StatusCheckFailed",
+        "statistic": "Maximum",
+        "period": 60,
+        "evaluationPeriods": 2,
+        "threshold": 1,
+        "comparisonOperator": "GreaterThanOrEqualToThreshold"
+      },
+      "actions": {
+        "alarm": ["sns_topic"],
+        "ok": ["sns_topic"]
+      },
+      "treatMissingData": "notBreaching",
+      "severity": "error"
+    },
+    {
+      "name": "asg-instance-termination",
+      "description": "Auto Scaling Group terminated an instance",
+      "metric": {
+        "namespace": "AWS/AutoScaling",
+        "name": "GroupTerminatingInstances",
+        "statistic": "Sum",
+        "period": 300,
+        "evaluationPeriods": 1,
+        "threshold": 1,
+        "comparisonOperator": "GreaterThanOrEqualToThreshold"
+      },
+      "actions": {
+        "alarm": ["sns_topic"],
+        "ok": []
+      },
+      "treatMissingData": "notBreaching",
+      "severity": "info"
+    },
+    {
+      "name": "sns-failed-notifications",
+      "description": "SNS failed to deliver notifications",
+      "metric": {
+        "namespace": "AWS/SNS",
+        "name": "NumberOfNotificationsFailed",
+        "statistic": "Sum",
+        "period": 300,
+        "evaluationPeriods": 1,
+        "threshold": 1,
+        "comparisonOperator": "GreaterThanThreshold"
+      },
+      "actions": {
+        "alarm": ["sns_topic"],
+        "ok": []
+      },
+      "treatMissingData": "notBreaching",
+      "severity": "warning"
+    },
+    {
+      "name": "network-in-anomaly",
+      "description": "Unusual network traffic detected (possible DDoS)",
+      "metric": {
+        "namespace": "AWS/EC2",
+        "name": "NetworkIn",
+        "statistic": "Average",
+        "period": 300,
+        "evaluationPeriods": 2,
+        "threshold": 100000000,
+        "comparisonOperator": "GreaterThanThreshold"
+      },
+      "actions": {
+        "alarm": ["sns_topic", "pagerduty"],
+        "ok": []
+      },
+      "treatMissingData": "notBreaching",
+      "severity": "warning",
+      "note": "Threshold is 100MB/s average - adjust based on normal traffic patterns"
+    },
+    {
+      "name": "composite-system-health",
+      "description": "Composite alarm for overall system health",
+      "type": "CompositeAlarm",
+      "rule": "ALARM(ec2-cpu-utilization-critical) OR ALARM(memory-utilization-critical) OR ALARM(alb-no-healthy-targets)",
+      "actions": {
+        "alarm": ["sns_topic", "pagerduty"],
+        "ok": ["sns_topic"]
+      },
+      "severity": "critical",
+      "note": "Composite alarm that triggers when any critical component fails"
+    }
+  ],
+  "metadata": {
+    "version": "1.0",
+    "created": "2024-01-01",
+    "description": "CloudWatch alarm definitions for self-healing infrastructure",
+    "severity_levels": {
+      "critical": "Immediate action required, system down or data loss imminent",
+      "error": "Error condition, functionality impaired",
+      "warning": "Warning condition, potential issues",
+      "info": "Informational, no action required"
+    }
+  }
+}

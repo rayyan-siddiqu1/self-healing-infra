@@ -1,0 +1,304 @@
+{
+  "metricFilters": [
+    {
+      "name": "ErrorCount",
+      "logGroup": "/aws/lambda/self-healing-infra-prod-trigger_remediation",
+      "filterPattern": "[time, request_id, level = ERROR*, ...]",
+      "metricTransformations": [
+        {
+          "metricName": "ErrorCount",
+          "metricNamespace": "SelfHealingInfra/Lambda",
+          "metricValue": "1",
+          "defaultValue": 0,
+          "unit": "Count"
+        }
+      ],
+      "description": "Count of ERROR level log entries in remediation Lambda"
+    },
+    {
+      "name": "RemediationTriggered",
+      "logGroup": "/aws/lambda/self-healing-infra-prod-trigger_remediation",
+      "filterPattern": "[time, request_id, level, msg = \"*Remediation triggered*\", ...]",
+      "metricTransformations": [
+        {
+          "metricName": "RemediationCount",
+          "metricNamespace": "SelfHealingInfra/Remediation",
+          "metricValue": "1",
+          "defaultValue": 0,
+          "unit": "Count"
+        }
+      ],
+      "description": "Count of remediation actions triggered"
+    },
+    {
+      "name": "HighCPURemediation",
+      "logGroup": "/aws/lambda/self-healing-infra-prod-trigger_remediation",
+      "filterPattern": "[time, request_id, level, msg = \"*Handling high CPU*\", ...]",
+      "metricTransformations": [
+        {
+          "metricName": "HighCPURemediationCount",
+          "metricNamespace": "SelfHealingInfra/Remediation",
+          "metricValue": "1",
+          "defaultValue": 0,
+          "unit": "Count"
+        }
+      ],
+      "description": "Count of high CPU remediation actions"
+    },
+    {
+      "name": "MemoryClearCount",
+      "logGroup": "/aws/lambda/self-healing-infra-prod-trigger_remediation",
+      "filterPattern": "[time, request_id, level, msg = \"*Handling high memory*\", ...]",
+      "metricTransformations": [
+        {
+          "metricName": "MemoryClearCount",
+          "metricNamespace": "SelfHealingInfra/Remediation",
+          "metricValue": "1",
+          "defaultValue": 0,
+          "unit": "Count"
+        }
+      ],
+      "description": "Count of memory cache clear operations"
+    },
+    {
+      "name": "DiskCleanupCount",
+      "logGroup": "/aws/lambda/self-healing-infra-prod-trigger_remediation",
+      "filterPattern": "[time, request_id, level, msg = \"*Handling high disk*\", ...]",
+      "metricTransformations": [
+        {
+          "metricName": "DiskCleanupCount",
+          "metricNamespace": "SelfHealingInfra/Remediation",
+          "metricValue": "1",
+          "defaultValue": 0,
+          "unit": "Count"
+        }
+      ],
+      "description": "Count of disk cleanup operations"
+    },
+    {
+      "name": "InstanceTerminationCount",
+      "logGroup": "/aws/lambda/self-healing-infra-prod-trigger_remediation",
+      "filterPattern": "[time, request_id, level, msg = \"*Terminated unhealthy instance*\", ...]",
+      "metricTransformations": [
+        {
+          "metricName": "UnhealthyInstanceTerminations",
+          "metricNamespace": "SelfHealingInfra/Remediation",
+          "metricValue": "1",
+          "defaultValue": 0,
+          "unit": "Count"
+        }
+      ],
+      "description": "Count of unhealthy instances terminated"
+    },
+    {
+      "name": "ScalingOperations",
+      "logGroup": "/aws/lambda/self-healing-infra-prod-trigger_remediation",
+      "filterPattern": "[time, request_id, level, msg = \"*Scaling*\", ...]",
+      "metricTransformations": [
+        {
+          "metricName": "ScalingOperationCount",
+          "metricNamespace": "SelfHealingInfra/Remediation",
+          "metricValue": "1",
+          "defaultValue": 0,
+          "unit": "Count"
+        }
+      ],
+      "description": "Count of auto-scaling operations triggered"
+    },
+    {
+      "name": "NotificationsSent",
+      "logGroup": "/aws/lambda/self-healing-infra-prod-notify",
+      "filterPattern": "[time, request_id, level, msg = \"*notification sent*\", ...]",
+      "metricTransformations": [
+        {
+          "metricName": "NotificationCount",
+          "metricNamespace": "SelfHealingInfra/Notifications",
+          "metricValue": "1",
+          "defaultValue": 0,
+          "unit": "Count"
+        }
+      ],
+      "description": "Count of notifications sent"
+    },
+    {
+      "name": "NotificationErrors",
+      "logGroup": "/aws/lambda/self-healing-infra-prod-notify",
+      "filterPattern": "[time, request_id, level, msg = \"*Error sending*\", ...]",
+      "metricTransformations": [
+        {
+          "metricName": "NotificationErrorCount",
+          "metricNamespace": "SelfHealingInfra/Notifications",
+          "metricValue": "1",
+          "defaultValue": 0,
+          "unit": "Count"
+        }
+      ],
+      "description": "Count of notification failures"
+    },
+    {
+      "name": "SlackNotifications",
+      "logGroup": "/aws/lambda/self-healing-infra-prod-notify",
+      "filterPattern": "[time, request_id, level, msg = \"*Slack notification sent*\", ...]",
+      "metricTransformations": [
+        {
+          "metricName": "SlackNotificationCount",
+          "metricNamespace": "SelfHealingInfra/Notifications",
+          "metricValue": "1",
+          "defaultValue": 0,
+          "unit": "Count"
+        }
+      ],
+      "description": "Count of Slack notifications sent"
+    },
+    {
+      "name": "PagerDutyAlerts",
+      "logGroup": "/aws/lambda/self-healing-infra-prod-notify",
+      "filterPattern": "[time, request_id, level, msg = \"*PagerDuty notification sent*\", ...]",
+      "metricTransformations": [
+        {
+          "metricName": "PagerDutyAlertCount",
+          "metricNamespace": "SelfHealingInfra/Notifications",
+          "metricValue": "1",
+          "defaultValue": 0,
+          "unit": "Count"
+        }
+      ],
+      "description": "Count of PagerDuty alerts triggered"
+    },
+    {
+      "name": "ApplicationErrors",
+      "logGroup": "/aws/ec2/self-healing-infra-prod",
+      "filterPattern": "[time, level = ERROR*, ...]",
+      "metricTransformations": [
+        {
+          "metricName": "ApplicationErrorCount",
+          "metricNamespace": "SelfHealingInfra/Application",
+          "metricValue": "1",
+          "defaultValue": 0,
+          "unit": "Count"
+        }
+      ],
+      "description": "Count of application-level errors"
+    },
+    {
+      "name": "HTTPResponseTime",
+      "logGroup": "/aws/ec2/self-healing-infra-prod",
+      "filterPattern": "[time, request_id, duration, ...]",
+      "metricTransformations": [
+        {
+          "metricName": "ApplicationResponseTime",
+          "metricNamespace": "SelfHealingInfra/Application",
+          "metricValue": "$duration",
+          "defaultValue": 0,
+          "unit": "Milliseconds"
+        }
+      ],
+      "description": "Application response time extracted from logs"
+    },
+    {
+      "name": "HTTPRequestCount",
+      "logGroup": "/aws/ec2/self-healing-infra-prod",
+      "filterPattern": "[time, request_id, method, path, ...]",
+      "metricTransformations": [
+        {
+          "metricName": "ApplicationRequestCount",
+          "metricNamespace": "SelfHealingInfra/Application",
+          "metricValue": "1",
+          "defaultValue": 0,
+          "unit": "Count"
+        }
+      ],
+      "description": "Count of HTTP requests processed by application"
+    },
+    {
+      "name": "HTTP5xxErrors",
+      "logGroup": "/aws/ec2/self-healing-infra-prod",
+      "filterPattern": "[time, request_id, method, path, status = 5*, ...]",
+      "metricTransformations": [
+        {
+          "metricName": "Application5xxCount",
+          "metricNamespace": "SelfHealingInfra/Application",
+          "metricValue": "1",
+          "defaultValue": 0,
+          "unit": "Count"
+        }
+      ],
+      "description": "Count of 5xx errors from application"
+    },
+    {
+      "name": "RemediationSuccessRate",
+      "logGroup": "/aws/lambda/self-healing-infra-prod-trigger_remediation",
+      "filterPattern": "[time, request_id, level, msg = \"*successfully*\", ...]",
+      "metricTransformations": [
+        {
+          "metricName": "RemediationSuccessCount",
+          "metricNamespace": "SelfHealingInfra/Remediation",
+          "metricValue": "1",
+          "defaultValue": 0,
+          "unit": "Count"
+        }
+      ],
+      "description": "Count of successful remediation operations"
+    },
+    {
+      "name": "RemediationFailures",
+      "logGroup": "/aws/lambda/self-healing-infra-prod-trigger_remediation",
+      "filterPattern": "[time, request_id, level = ERROR*, msg = \"*remediation*\", ...]",
+      "metricTransformations": [
+        {
+          "metricName": "RemediationFailureCount",
+          "metricNamespace": "SelfHealingInfra/Remediation",
+          "metricValue": "1",
+          "defaultValue": 0,
+          "unit": "Count"
+        }
+      ],
+      "description": "Count of failed remediation operations"
+    }
+  ],
+  "customMetrics": {
+    "namespace": "SelfHealingInfra/Custom",
+    "metrics": [
+      {
+        "name": "SystemHealth",
+        "description": "Overall system health score (0-100)",
+        "unit": "None",
+        "source": "cloudwatch_agent"
+      },
+      {
+        "name": "ActiveSessions",
+        "description": "Number of active user sessions",
+        "unit": "Count",
+        "source": "application"
+      },
+      {
+        "name": "CacheHitRate",
+        "description": "Cache hit rate percentage",
+        "unit": "Percent",
+        "source": "application"
+      },
+      {
+        "name": "QueueDepth",
+        "description": "Number of items in processing queue",
+        "unit": "Count",
+        "source": "application"
+      },
+      {
+        "name": "DatabaseConnections",
+        "description": "Number of active database connections",
+        "unit": "Count",
+        "source": "application"
+      }
+    ]
+  },
+  "metadata": {
+    "version": "1.0",
+    "description": "CloudWatch metric filters for custom application and remediation metrics",
+    "notes": [
+      "Metric filters extract custom metrics from CloudWatch Logs",
+      "These metrics can be used in dashboards and alarms",
+      "Filter patterns should match your actual log format",
+      "Adjust filter patterns based on your logging structure"
+    ]
+  }
+}

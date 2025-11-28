@@ -1,0 +1,353 @@
+{
+  "widgets": [
+    {
+      "type": "metric",
+      "properties": {
+        "metrics": [
+          [ "AWS/EC2", "CPUUtilization", { "stat": "Average", "label": "Avg CPU" } ],
+          [ "...", { "stat": "Maximum", "label": "Max CPU" } ]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "title": "EC2 CPU Utilization",
+        "period": 300,
+        "yAxis": {
+          "left": {
+            "min": 0,
+            "max": 100
+          }
+        }
+      },
+      "width": 12,
+      "height": 6,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "metrics": [
+          [ "CWAgent", "mem_used_percent", { "stat": "Average" } ]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "title": "Memory Utilization",
+        "period": 300,
+        "yAxis": {
+          "left": {
+            "min": 0,
+            "max": 100
+          }
+        }
+      },
+      "width": 12,
+      "height": 6,
+      "x": 12,
+      "y": 0
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "metrics": [
+          [ "CWAgent", "disk_used_percent", { "stat": "Average" } ]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "title": "Disk Utilization",
+        "period": 300,
+        "yAxis": {
+          "left": {
+            "min": 0,
+            "max": 100
+          }
+        }
+      },
+      "width": 12,
+      "height": 6,
+      "x": 0,
+      "y": 6
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "metrics": [
+          [ "AWS/EC2", "NetworkIn", { "stat": "Sum", "label": "Network In" } ],
+          [ ".", "NetworkOut", { "stat": "Sum", "label": "Network Out" } ]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "title": "Network Traffic",
+        "period": 300,
+        "yAxis": {
+          "left": {
+            "label": "Bytes"
+          }
+        }
+      },
+      "width": 12,
+      "height": 6,
+      "x": 12,
+      "y": 6
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "metrics": [
+          [ "AWS/ApplicationELB", "TargetResponseTime", { "stat": "Average" } ]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "title": "ALB Response Time",
+        "period": 300,
+        "yAxis": {
+          "left": {
+            "label": "Seconds"
+          }
+        }
+      },
+      "width": 8,
+      "height": 6,
+      "x": 0,
+      "y": 12
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "metrics": [
+          [ "AWS/ApplicationELB", "RequestCount", { "stat": "Sum" } ]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "title": "ALB Request Count",
+        "period": 300
+      },
+      "width": 8,
+      "height": 6,
+      "x": 8,
+      "y": 12
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "metrics": [
+          [ "AWS/ApplicationELB", "HealthyHostCount", { "stat": "Average", "label": "Healthy" } ],
+          [ ".", "UnHealthyHostCount", { "stat": "Average", "label": "Unhealthy" } ]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "title": "Target Health",
+        "period": 300
+      },
+      "width": 8,
+      "height": 6,
+      "x": 16,
+      "y": 12
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "metrics": [
+          [ "AWS/ApplicationELB", "HTTPCode_Target_2XX_Count", { "stat": "Sum", "label": "2xx" } ],
+          [ ".", "HTTPCode_Target_4XX_Count", { "stat": "Sum", "label": "4xx" } ],
+          [ ".", "HTTPCode_Target_5XX_Count", { "stat": "Sum", "label": "5xx" } ]
+        ],
+        "view": "timeSeries",
+        "stacked": true,
+        "region": "us-east-1",
+        "title": "HTTP Response Codes",
+        "period": 300
+      },
+      "width": 12,
+      "height": 6,
+      "x": 0,
+      "y": 18
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "metrics": [
+          [ "AWS/AutoScaling", "GroupDesiredCapacity", { "label": "Desired" } ],
+          [ ".", "GroupInServiceInstances", { "label": "In Service" } ],
+          [ ".", "GroupMinSize", { "label": "Min" } ],
+          [ ".", "GroupMaxSize", { "label": "Max" } ]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "title": "Auto Scaling Group Capacity",
+        "period": 300
+      },
+      "width": 12,
+      "height": 6,
+      "x": 12,
+      "y": 18
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "metrics": [
+          [ "AWS/Lambda", "Invocations", { "stat": "Sum" } ]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "title": "Lambda Invocations",
+        "period": 300
+      },
+      "width": 8,
+      "height": 6,
+      "x": 0,
+      "y": 24
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "metrics": [
+          [ "AWS/Lambda", "Errors", { "stat": "Sum", "color": "#d62728" } ],
+          [ ".", "Throttles", { "stat": "Sum", "color": "#ff7f0e" } ]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "title": "Lambda Errors & Throttles",
+        "period": 300
+      },
+      "width": 8,
+      "height": 6,
+      "x": 8,
+      "y": 24
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "metrics": [
+          [ "AWS/Lambda", "Duration", { "stat": "Average", "label": "Avg Duration" } ],
+          [ "...", { "stat": "Maximum", "label": "Max Duration" } ]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "title": "Lambda Duration",
+        "period": 300,
+        "yAxis": {
+          "left": {
+            "label": "Milliseconds"
+          }
+        }
+      },
+      "width": 8,
+      "height": 6,
+      "x": 16,
+      "y": 24
+    },
+    {
+      "type": "log",
+      "properties": {
+        "query": "SOURCE '/aws/lambda/self-healing-infra-prod-trigger_remediation'\n| fields @timestamp, @message\n| filter @message like /ERROR/\n| sort @timestamp desc\n| limit 20",
+        "region": "us-east-1",
+        "title": "Recent Lambda Errors",
+        "stacked": false
+      },
+      "width": 12,
+      "height": 6,
+      "x": 0,
+      "y": 30
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "metrics": [
+          [ { "expression": "m1/m2*100", "label": "Error Rate %", "id": "e1" } ],
+          [ "AWS/Lambda", "Errors", { "id": "m1", "visible": false, "stat": "Sum" } ],
+          [ ".", "Invocations", { "id": "m2", "visible": false, "stat": "Sum" } ]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "us-east-1",
+        "title": "Lambda Error Rate",
+        "period": 300,
+        "yAxis": {
+          "left": {
+            "min": 0,
+            "max": 100
+          }
+        }
+      },
+      "width": 12,
+      "height": 6,
+      "x": 12,
+      "y": 30
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "metrics": [
+          [ "AWS/SNS", "NumberOfMessagesPublished", { "stat": "Sum" } ]
+        ],
+        "view": "singleValue",
+        "region": "us-east-1",
+        "title": "SNS Messages Published",
+        "period": 300
+      },
+      "width": 6,
+      "height": 3,
+      "x": 0,
+      "y": 36
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "metrics": [
+          [ "AWS/SNS", "NumberOfNotificationsFailed", { "stat": "Sum", "color": "#d62728" } ]
+        ],
+        "view": "singleValue",
+        "region": "us-east-1",
+        "title": "SNS Failed Notifications",
+        "period": 300
+      },
+      "width": 6,
+      "height": 3,
+      "x": 6,
+      "y": 36
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "metrics": [
+          [ "AWS/EC2", "StatusCheckFailed", { "stat": "Sum" } ]
+        ],
+        "view": "singleValue",
+        "region": "us-east-1",
+        "title": "EC2 Failed Status Checks",
+        "period": 300
+      },
+      "width": 6,
+      "height": 3,
+      "x": 12,
+      "y": 36
+    },
+    {
+      "type": "metric",
+      "properties": {
+        "metrics": [
+          [ "AWS/ApplicationELB", "ActiveConnectionCount", { "stat": "Sum" } ]
+        ],
+        "view": "singleValue",
+        "region": "us-east-1",
+        "title": "ALB Active Connections",
+        "period": 300
+      },
+      "width": 6,
+      "height": 3,
+      "x": 18,
+      "y": 36
+    }
+  ]
+}

@@ -1,0 +1,827 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      },
+      {
+        "datasource": "CloudWatch",
+        "enable": true,
+        "expr": "RemediationEvents",
+        "iconColor": "green",
+        "name": "Remediation Actions",
+        "step": "60s"
+      }
+    ]
+  },
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": "CloudWatch",
+      "gridPos": {
+        "h": 3,
+        "w": 6,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["sum"],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "9.0.0",
+      "targets": [
+        {
+          "alias": "Total Remediations",
+          "dimensions": {},
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricName": "RemediationCount",
+          "namespace": "SelfHealingInfra/Remediation",
+          "period": "",
+          "refId": "A",
+          "region": "us-east-1",
+          "statistics": ["Sum"]
+        }
+      ],
+      "title": "Total Remediations (24h)",
+      "type": "stat",
+      "timeFrom": "24h"
+    },
+    {
+      "datasource": "CloudWatch",
+      "gridPos": {
+        "h": 3,
+        "w": 6,
+        "x": 6,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["sum"],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto",
+        "thresholds": {
+          "mode": "absolute",
+          "steps": [
+            {"color": "green", "value": null},
+            {"color": "red", "value": 1}
+          ]
+        }
+      },
+      "pluginVersion": "9.0.0",
+      "targets": [
+        {
+          "alias": "Lambda Errors",
+          "dimensions": {},
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricName": "Errors",
+          "namespace": "AWS/Lambda",
+          "period": "",
+          "refId": "A",
+          "region": "us-east-1",
+          "statistics": ["Sum"]
+        }
+      ],
+      "title": "Lambda Errors (24h)",
+      "type": "stat",
+      "timeFrom": "24h"
+    },
+    {
+      "datasource": "CloudWatch",
+      "gridPos": {
+        "h": 3,
+        "w": 6,
+        "x": 12,
+        "y": 0
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["sum"],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "9.0.0",
+      "targets": [
+        {
+          "alias": "Notifications",
+          "dimensions": {},
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricName": "NotificationCount",
+          "namespace": "SelfHealingInfra/Notifications",
+          "period": "",
+          "refId": "A",
+          "region": "us-east-1",
+          "statistics": ["Sum"]
+        }
+      ],
+      "title": "Notifications Sent (24h)",
+      "type": "stat",
+      "timeFrom": "24h"
+    },
+    {
+      "datasource": "CloudWatch",
+      "gridPos": {
+        "h": 3,
+        "w": 6,
+        "x": 18,
+        "y": 0
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["sum"],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto",
+        "thresholds": {
+          "mode": "absolute",
+          "steps": [
+            {"color": "green", "value": null},
+            {"color": "red", "value": 1}
+          ]
+        }
+      },
+      "pluginVersion": "9.0.0",
+      "targets": [
+        {
+          "alias": "Failed Notifications",
+          "dimensions": {},
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricName": "NotificationErrorCount",
+          "namespace": "SelfHealingInfra/Notifications",
+          "period": "",
+          "refId": "A",
+          "region": "us-east-1",
+          "statistics": ["Sum"]
+        }
+      ],
+      "title": "Failed Notifications (24h)",
+      "type": "stat",
+      "timeFrom": "24h"
+    },
+    {
+      "datasource": "CloudWatch",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 100,
+            "gradientMode": "none",
+            "hideFrom": {"tooltip": false, "viz": false, "legend": false},
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {"type": "linear"},
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {"group": "A", "mode": "normal"},
+            "thresholdsStyle": {"mode": "off"}
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null}
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 3
+      },
+      "id": 5,
+      "options": {
+        "legend": {
+          "calcs": ["sum"],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {"mode": "multi", "sort": "none"}
+      },
+      "pluginVersion": "9.0.0",
+      "targets": [
+        {
+          "alias": "High CPU",
+          "dimensions": {},
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricName": "HighCPURemediationCount",
+          "namespace": "SelfHealingInfra/Remediation",
+          "period": "",
+          "refId": "A",
+          "region": "us-east-1",
+          "statistics": ["Sum"]
+        },
+        {
+          "alias": "Memory Clear",
+          "dimensions": {},
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricName": "MemoryClearCount",
+          "namespace": "SelfHealingInfra/Remediation",
+          "period": "",
+          "refId": "B",
+          "region": "us-east-1",
+          "statistics": ["Sum"]
+        },
+        {
+          "alias": "Disk Cleanup",
+          "dimensions": {},
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricName": "DiskCleanupCount",
+          "namespace": "SelfHealingInfra/Remediation",
+          "period": "",
+          "refId": "C",
+          "region": "us-east-1",
+          "statistics": ["Sum"]
+        },
+        {
+          "alias": "Scaling",
+          "dimensions": {},
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricName": "ScalingOperationCount",
+          "namespace": "SelfHealingInfra/Remediation",
+          "period": "",
+          "refId": "D",
+          "region": "us-east-1",
+          "statistics": ["Sum"]
+        },
+        {
+          "alias": "Instance Termination",
+          "dimensions": {},
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricName": "UnhealthyInstanceTerminations",
+          "namespace": "SelfHealingInfra/Remediation",
+          "period": "",
+          "refId": "E",
+          "region": "us-east-1",
+          "statistics": ["Sum"]
+        }
+      ],
+      "title": "Remediation Actions by Type",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "CloudWatch",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "custom": {"hideFrom": {"tooltip": false, "viz": false, "legend": false}},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null}
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 3
+      },
+      "id": 6,
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "values": ["value"]
+        },
+        "pieType": "pie",
+        "reduceOptions": {
+          "calcs": ["sum"],
+          "fields": "",
+          "values": false
+        },
+        "tooltip": {"mode": "single", "sort": "none"}
+      },
+      "pluginVersion": "9.0.0",
+      "targets": [
+        {
+          "alias": "High CPU",
+          "dimensions": {},
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricName": "HighCPURemediationCount",
+          "namespace": "SelfHealingInfra/Remediation",
+          "period": "",
+          "refId": "A",
+          "region": "us-east-1",
+          "statistics": ["Sum"]
+        },
+        {
+          "alias": "Memory",
+          "dimensions": {},
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricName": "MemoryClearCount",
+          "namespace": "SelfHealingInfra/Remediation",
+          "period": "",
+          "refId": "B",
+          "region": "us-east-1",
+          "statistics": ["Sum"]
+        },
+        {
+          "alias": "Disk",
+          "dimensions": {},
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricName": "DiskCleanupCount",
+          "namespace": "SelfHealingInfra/Remediation",
+          "period": "",
+          "refId": "C",
+          "region": "us-east-1",
+          "statistics": ["Sum"]
+        },
+        {
+          "alias": "Scaling",
+          "dimensions": {},
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricName": "ScalingOperationCount",
+          "namespace": "SelfHealingInfra/Remediation",
+          "period": "",
+          "refId": "D",
+          "region": "us-east-1",
+          "statistics": ["Sum"]
+        }
+      ],
+      "title": "Remediation Distribution (24h)",
+      "type": "piechart",
+      "timeFrom": "24h"
+    },
+    {
+      "datasource": "CloudWatch",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {"tooltip": false, "viz": false, "legend": false},
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {"type": "linear"},
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {"group": "A", "mode": "none"},
+            "thresholdsStyle": {"mode": "off"}
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null}
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "Success"},
+            "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}}]
+          },
+          {
+            "matcher": {"id": "byName", "options": "Failures"},
+            "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}}]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 11
+      },
+      "id": 7,
+      "options": {
+        "legend": {
+          "calcs": ["sum", "mean"],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {"mode": "multi", "sort": "none"}
+      },
+      "pluginVersion": "9.0.0",
+      "targets": [
+        {
+          "alias": "Success",
+          "dimensions": {},
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricName": "RemediationSuccessCount",
+          "namespace": "SelfHealingInfra/Remediation",
+          "period": "",
+          "refId": "A",
+          "region": "us-east-1",
+          "statistics": ["Sum"]
+        },
+        {
+          "alias": "Failures",
+          "dimensions": {},
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricName": "RemediationFailureCount",
+          "namespace": "SelfHealingInfra/Remediation",
+          "period": "",
+          "refId": "B",
+          "region": "us-east-1",
+          "statistics": ["Sum"]
+        }
+      ],
+      "title": "Remediation Success vs Failures",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "CloudWatch",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {"tooltip": false, "viz": false, "legend": false},
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {"type": "linear"},
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {"group": "A", "mode": "none"},
+            "thresholdsStyle": {"mode": "off"}
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null}
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 11
+      },
+      "id": 8,
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max", "p95"],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {"mode": "multi", "sort": "none"}
+      },
+      "pluginVersion": "9.0.0",
+      "targets": [
+        {
+          "alias": "Remediation Lambda",
+          "dimensions": {"FunctionName": "self-healing-infra-prod-trigger_remediation"},
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricName": "Duration",
+          "namespace": "AWS/Lambda",
+          "period": "",
+          "refId": "A",
+          "region": "us-east-1",
+          "statistics": ["Average", "p95", "Maximum"]
+        },
+        {
+          "alias": "Notify Lambda",
+          "dimensions": {"FunctionName": "self-healing-infra-prod-notify"},
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricName": "Duration",
+          "namespace": "AWS/Lambda",
+          "period": "",
+          "refId": "B",
+          "region": "us-east-1",
+          "statistics": ["Average", "p95", "Maximum"]
+        }
+      ],
+      "title": "Lambda Execution Duration",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "CloudWatch",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 100,
+            "gradientMode": "none",
+            "hideFrom": {"tooltip": false, "viz": false, "legend": false},
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {"type": "linear"},
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {"group": "A", "mode": "normal"},
+            "thresholdsStyle": {"mode": "off"}
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null}
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 19
+      },
+      "id": 9,
+      "options": {
+        "legend": {
+          "calcs": ["sum"],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {"mode": "multi", "sort": "none"}
+      },
+      "pluginVersion": "9.0.0",
+      "targets": [
+        {
+          "alias": "Slack",
+          "dimensions": {},
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricName": "SlackNotificationCount",
+          "namespace": "SelfHealingInfra/Notifications",
+          "period": "",
+          "refId": "A",
+          "region": "us-east-1",
+          "statistics": ["Sum"]
+        },
+        {
+          "alias": "PagerDuty",
+          "dimensions": {},
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricName": "PagerDutyAlertCount",
+          "namespace": "SelfHealingInfra/Notifications",
+          "period": "",
+          "refId": "B",
+          "region": "us-east-1",
+          "statistics": ["Sum"]
+        },
+        {
+          "alias": "SNS",
+          "dimensions": {},
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricName": "NumberOfMessagesPublished",
+          "namespace": "AWS/SNS",
+          "period": "",
+          "refId": "C",
+          "region": "us-east-1",
+          "statistics": ["Sum"]
+        }
+      ],
+      "title": "Notifications by Channel",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "CloudWatch",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {"tooltip": false, "viz": false, "legend": false},
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {"type": "linear"},
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {"group": "A", "mode": "none"},
+            "thresholdsStyle": {"mode": "off"}
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null}
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 19
+      },
+      "id": 10,
+      "options": {
+        "legend": {
+          "calcs": ["sum"],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {"mode": "multi", "sort": "none"}
+      },
+      "pluginVersion": "9.0.0",
+      "targets": [
+        {
+          "alias": "Remediation Lambda Invocations",
+          "dimensions": {"FunctionName": "self-healing-infra-prod-trigger_remediation"},
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricName": "Invocations",
+          "namespace": "AWS/Lambda",
+          "period": "",
+          "refId": "A",
+          "region": "us-east-1",
+          "statistics": ["Sum"]
+        },
+        {
+          "alias": "Notify Lambda Invocations",
+          "dimensions": {"FunctionName": "self-healing-infra-prod-notify"},
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricName": "Invocations",
+          "namespace": "AWS/Lambda",
+          "period": "",
+          "refId": "B",
+          "region": "us-east-1",
+          "statistics": ["Sum"]
+        }
+      ],
+      "title": "Lambda Invocation Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "CloudWatch",
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 27
+      },
+      "id": 11,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": false,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": false
+      },
+      "pluginVersion": "9.0.0",
+      "targets": [
+        {
+          "dimensions": {},
+          "expression": "fields @timestamp, @message | filter @message like /Remediation/ | sort @timestamp desc | limit 50",
+          "id": "",
+          "logGroupNames": [
+            "/aws/lambda/self-healing-infra-prod-trigger_remediation"
+          ],
+          "matchExact": true,
+          "metricName": "",
+          "namespace": "",
+          "period": "",
+          "refId": "A",
+          "region": "us-east-1",
+          "statistics": []
+        }
+      ],
+      "title": "Recent Remediation Events",
+      "type": "logs"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 36,
+  "style": "dark",
+  "tags": ["self-healing", "remediation", "lambda", "notifications"],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Self-Healing Infrastructure - Remediation Dashboard",
+  "uid": "self-healing-remediation",
+  "version": 1,
+  "weekStart": ""
+}
